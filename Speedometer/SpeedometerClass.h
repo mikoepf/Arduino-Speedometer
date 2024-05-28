@@ -12,6 +12,7 @@
 #define RSETBUT       7       // Pinnumber of the Resetbutton.
 #define ROTBUT        6       // Pinnumber of the Rotary-EncoderButton.
 #define ROTARY        21      // Pinnumber of the RotationSensor.
+#define SENSORS       20      // Amount of magnets placed on the pulley. => So many signal falling edges are detected in one revolution
 
 
 /*
@@ -28,11 +29,12 @@ struct Profile
 {
   char profile_name[6];
   char filter_name[6];
-  unsigned short int max_rpm;//3000/minMillis; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
-  unsigned short int min_rpm;//3000/maxMillis; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
+  unsigned short int max_rpm;//3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
+  unsigned short int min_rpm;//3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
   unsigned short int sample_size;
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Sensor
 {
@@ -47,6 +49,8 @@ Sensor() : signal_order(0), time_stamp (0) {};
 Sensor(const unsigned long int t_stamp,const bool s_order): time_stamp(t_stamp),signal_order(s_order) {};
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class TimeDifference  // Determines the time between the last detected falling edge and the currently detected falling edge.
 {
   private:
@@ -59,6 +63,7 @@ TimeDifference(): previous_time_stamp(0),time_difference(0){};
 TimeDifference(const unsigned long int p_stamp,const unsigned long int t_diff): previous_time_stamp(p_stamp),time_difference(t_diff) {};
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Rpm
 {
   private:
@@ -118,5 +123,26 @@ for(int i = 0;i<sample_size;++i)
 
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class AxisValue
+{
+  private:
+double throttle;  // The Axisvalue of the Joystick is stored here. It is called "Throttle" since the Joistick-Axis is defined as throttle-axis
+  public:
+void CalculateAxisValue(const Profile & profile, const Rpm & rpm, Sensor &sensor); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
+void SetAxisValue(Joystick_ &Joystick ); // Sets/sends the calculated Axisvalues to the Joystick.
+void ResetAxisValue(const Profile & profile,Rpm & rpm,Sensor &sensor,TimeDifference & timedifference); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonged time
+                                                                                            // Since the Axisvalue is calculate only when a falling edge has been detected, the Axisvalu would be stuck
+                                                                                            // on the last calculated value, if no new falling edge has been detected. E.g: abrupt stop of the rotation.
+AxisValue() : throttle(0){};
+};
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //#endif

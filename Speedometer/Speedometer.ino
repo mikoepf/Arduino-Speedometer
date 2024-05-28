@@ -15,8 +15,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);   // LCD parameter definitions
 bool Pin [21];   // An array to store the Pin-values ==> for test purposes
 
 // Testvariables declaration
-void SetJoystick();
-double Throttle=0;
+
 
 //////////////////////////////////////
 
@@ -28,7 +27,7 @@ Profile ProfileCurrent;
 Sensor Ping(0,0);
 TimeDifference DeltaTime(0,0);
 Rpm Revs(ProfileDefault);
-
+AxisValue Throttle;
 
 //  END of Declarations  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -105,13 +104,14 @@ unsigned long int median_average_difference=0;
 //Revs.FillBuffer(Revs.av_time_difference);
 //Revs.AverageFilter();
 Revs.CalculateRpm();
-
+Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
 }
 Serial.println("---------------------------------------------- ");
 }
 Ping.SetSignalOrder();
 
-SetJoystick(ProfileCurrent, Revs, Ping);
+Throttle.ResetAxisValue(ProfileCurrent,Revs,Ping,DeltaTime); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonget time
+Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the Joystick.
 
 if (!digitalRead(RSETBUT))
 {
@@ -148,48 +148,6 @@ Revs.ResetRpm(Ping,DeltaTime);
 
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TEST_FUNCTIONS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-
-//////////////////////////////////////////////////////////////// FUnction to check the Joystick_print //////////////////////////////////////////////////////////////////////////
-
-void SetJoystick(const Profile & profile, Rpm & rpm, const Sensor &sensor)
-{
-  
- if(rpm.av_time_difference <= 3000/profile.max_rpm)
-  {
-  Throttle = axis_maximum;
-
-   }// handeling the minimum range of the velocity/throttle range if the ~rpm <= min rpm ==> throttle =0;
-   else if(rpm.av_time_difference >= 3000/profile.min_rpm)
-   {
-Throttle = 0;
-   }
-   else {
-    Throttle = axis_maximum *(static_cast <double>(3000/static_cast <double>(rpm.av_time_difference)-profile.min_rpm)/static_cast <double>(profile.max_rpm - profile.min_rpm));
-    //Throttle = axis_maximum * (100 - (rpm.av_time_difference - (3000/profile.max_rpm))*100 / ((3000/profile.min_rpm) - (3000/profile.max_rpm))) / 100;
-   }
-   
-if (millis() >= (sensor.time_stamp + (2 * 3000/profile.min_rpm)) && Throttle != 0 )
-{
-  Throttle = 0;
-}
-
-Joystick.setThrottle(Throttle);
-/*
-Serial.print("---------------------------------Throttle: ");
-Serial.println(Throttle);
-Serial.print("---------------------------------sensor.time_stamp + = ");
-Serial.println((2 * 3000/profile.min_rpm));
-*/
-}
-
-
-
-//////////////////////////////////////////////////////////////// FUnction to check the Buttons //////////////////////////////////////////////////////////////////////////
-
-
 
 
 
