@@ -1,36 +1,40 @@
 #pragma once  // should prevent the multiple call of the header.
-//#ifndef SpeedometerClass_H // should prevent the multiple call of the header.
-//#define SpeedometerClass_H // should prevent the multiple call of the header.
+//#ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
+//#define SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
 //#include <Keypad.h>         // A library for using matrix style keypads with the Arduino.
 #include <Joystick.h>       // A library to emulate a Joystick with buttons, switches and axis.
 //#include <Wire.h>           // This library allows you to communicate with I2C devices.
 #include <LiquidCrystal_I2C.h>  // This library allows you to communicate with I2C Liquid crystal Display.
 
-#define axis_minimum  0       // Minimumvalue of the axis-range.
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define axis_maximum  1023    // Maximumvalue of the axis-range.
-#define pins          22      // Number of accessible Pins on the Arduino Micro Pro.
+#define AXISMINIMUM   0       // Minimumvalue of the axis-range.
+#define AXISMAXIMUM   1023    // Maximumvalue of the axis-range.
+#define NUMROTARIES   1       // Amount of rotary encoders attached to the Microkontroller
+#define NUMBUTTONS    3       // Amount of buttons attached to the Microkontroller
+#define PINS          22      // Number of accessible Pins on the Microkontroller.
 #define RSETBUT       7       // Pinnumber of the Resetbutton.
-#define ROTBUT        6       // Pinnumber of the Rotary-EncoderButton.
-#define ROTARY        21      // Pinnumber of the RotationSensor.
+#define ROTBUT        6       // Pinnumber of the Rotary-Encoder Button.
+#define TACHO         21      // Pinnumber of the RotationSensor.
 #define SENSORS       20      // Amount of magnets placed on the pulley. => So many signal falling edges are detected in one revolution
+#define ROTARYMENU    0       // Which Rotary is used for the menu navigation
+#define ROTMENU1      5       // Pinnumber of the Resetbutton.
+#define ROTMENU2      4       // Pinnumber of the Rotary-Encoder Button.
+#define ROTDELAY      100     // The delay in "milli seconds" between the rotary encoder input requests to avoid signal bouncing
+#define BUTTONDELAY   500     // The delay in "milli seconds" between the button input requests to avoid signal bouncing
+#define RPMMIN        1       // The lowest rpm threshold 
+#define RPMMAX        200     // The highest rpm threshold 
+#define SAMPLEMIN     1       // The kowes sample threshold: At least this number of samples has to be stored in the buffer
+#define SAMPLEMAX     20      // The highest sample threshold: Maximal so many samples can be stored in the buffer
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
-extern const unsigned short int axis_minimum = 0; // Minimumvalue of the axis-range
-extern const unsigned short int axis_maximum = 1023;// Maximumvalue of the axis-range
-extern const unsigned short int pins = 22;    // Number of accessible Pins on the Arduino Micro Pro
-extern bool Pin [21];   // An array to store the Pin-values
-
-extern const unsigned short int RSETBUT=7; // Pinnumber of the Resetbutton
-extern const unsigned short int ROTBUT=6; // Pinnumber of the Rotary-EncoderButton
-extern const unsigned short int ROTARY=21; // Pinnumber of the RotationSensor
-*/
 struct Profile
 {
   char profile_name[6];
-  char filter_name[6];
-  unsigned short int max_rpm;//3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
-  unsigned short int min_rpm;//3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
+  char filter_name[3];
+  unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
+  unsigned short int min_rpm;// 3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
   unsigned short int sample_size;
 };
 
@@ -75,7 +79,7 @@ unsigned short int sample_size; // Determines the size of the "sample_buffer" bu
 unsigned short int sample_count;  // Dtores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int median_sample_count;  // Dtores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int rpm; // Stores the calculated revolutions per minute "rpm".
-char filter[6];     // Needs to be resolved !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+char filter[6];     // Needs to be resolved !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   public:
 unsigned long int av_time_difference; // stores the averaged timedifferences which are calculated/filtered from the time-differences stored in the buffer.
@@ -89,30 +93,25 @@ void MedianFilter(const unsigned long int &time_difference);  // This method cal
 void MedianAverageFilter(const unsigned long int &time_difference);  // This method calculates the averaged timedifferences from the time-differences stored in the buffer
                                                               // by combining the medianfilter and averagefilter to the buffer.
 void ResetRpm(Sensor & sensor,TimeDifference & timedifference);  // This method resets the rpm to 0 and clears/zeroizes all the respective buffers and variables.
+
 Rpm(const Profile & other)
 {
-  //filter = other.filter_name;
-  sample_size = other.sample_size;
-//  strcpy_s(filter, 6, other.filter_name);
+sample_size = other.sample_size;
 sample_count = median_sample_count=0;
 for(int i = 0;i<6;++i)
 {
   filter[i] = other.filter_name[i];
 }
-
-
 sample_buffer = new unsigned long int[sample_size];
 for(int i = 0;i<sample_size;++i)
 {
   sample_buffer[i] = 0;
 }
-
 median_sample_buffer = new unsigned long int[sample_size];
 for(int i = 0;i<sample_size;++i)
 {
   median_sample_buffer[i] = 0;
 }
-
 };
 
 ~Rpm()
@@ -136,6 +135,58 @@ void ResetAxisValue(const Profile & profile,Rpm & rpm,Sensor &sensor,TimeDiffere
                                                                                             // on the last calculated value, if no new falling edge has been detected. E.g: abrupt stop of the rotation.
 AxisValue() : throttle(0){};
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class UserInput
+{
+  private:
+bool consent_load;  // For query whether the selected Profile should be loaded => true = YES, false = NO
+bool consent_save;  // For query whether the current Profile should be saved => true = YES, false = NO
+bool* pin_state;
+unsigned long int rot_delay;  // Saves the timestamp for rotary encoder delay
+unsigned long int button_delay; // Saves the timestamp for button delay
+unsigned short int rot_pin1;  // Stores the pin adress of the rotary encoder (has two pins) 
+unsigned short int rot_pin2;  // Stores the pin adress of the rotary encoder (has two pins) 
+unsigned short int rot_dir; // Stores the rotation direction/state of the rotary encoder.
+volatile bool rot_state[2];  // Stores the current, or last state of rotary encoder signal.
+public:
+unsigned short int menu_count;  // For menu-iterations
+enum EnumRotState {DIR_NONE,DIR_CW,DIR_CCW};  // Represents the rotation direction/states of the rotary encoder.
+enum EnumMenu {STARTMENU,PROFILE_LOAD,MINRPM,MAXRPM,FILTER,SAMPLE_SIZE,PROFILE_SAVE,MENUSIZE};  // Represents the different menus.
+bool GetInput(const unsigned short int i);  // Reads the signals on the given pin (number).
+unsigned short int CheckRotaries(); // Reads the state of the given rotary (number).
+void ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent); // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
+void InitRot(); // Synchronizes the rotary encoder states at the begin of the programm.
+void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent); // Resets the Microcontroller
+void NavigateMenu(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Iterates the menus if the rotary encoder button is pressed.
+const void LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Prints the parameter & settings on the LCD Display
+
+UserInput()
+{
+pin_state = new bool [PINS];
+for(int i = 0;i<PINS;++i)
+{
+  pin_state[i] = 0;
+}
+consent_load = 0;
+consent_save = 0;
+rot_delay = 0;
+button_delay = 0;
+rot_pin1 = ROTMENU1;
+rot_pin2 = ROTMENU2;
+rot_dir = 0;
+rot_state[2] = (false,false);
+menu_count = 0;
+};
+
+~UserInput()
+{
+delete[] pin_state;
+};
+
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 

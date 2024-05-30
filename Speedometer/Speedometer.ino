@@ -5,22 +5,18 @@
 #include "SpeedometerClass.h" // This library was created in conjunction with this INO-file and contains all the Classes
 
 // Joystick declaration;
-
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID, 
   JOYSTICK_TYPE_JOYSTICK, 0, 0,
   false, false, false, false, false, false, 
   false, true, false, false, false);  // The Joystick will have only one Throttle-Axis
-
-LiquidCrystal_I2C lcd(0x27, 16, 2);   // LCD parameter definitions
-bool Pin [21];   // An array to store the Pin-values ==> for test purposes
+// LCD declaration and parameter definitions
+LiquidCrystal_I2C lcd(0x27, 16, 2);   
 
 // Testvariables declaration
 
-
-//////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Classes and Struct Declarations /////////////////////////////////////////////////////////////////
-
 
 const Profile ProfileDefault={"STD","AVR", 85, 25, 6};
 Profile ProfileCurrent;
@@ -28,22 +24,23 @@ Sensor Ping(0,0);
 TimeDifference DeltaTime(0,0);
 Rpm Revs(ProfileDefault);
 AxisValue Throttle;
+UserInput Hmi;
 
 //  END of Declarations  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-void setup() {
-  // The setup code is run only once, no Declarations can be performed here!
+void setup() {// The setup code is run only once, no Declarations can be performed here!
+  
 
-  // Initialisation of the serial Monitor
- Serial.begin(9600);
- Serial.println("Serialprint initialised");
- Serial.println(__LINE__);  //  Print the current code-Line on the serial Monitor
+// Initialisation of the serial Monitor
+  Serial.begin(9600);
+  Serial.println("Serialprint initialised");
+  Serial.println(__LINE__);  //  Print the current code-Line on the serial Monitor
 
- // Initialisation of the Joystick
-      Joystick.begin();
-      Joystick.setThrottleRange(axis_minimum,axis_maximum);
+// Initialisation of the Joystick
+  Joystick.begin();
+  Joystick.setThrottleRange(AXISMINIMUM,AXISMAXIMUM);
 
- // Initialisation of the LCd
+// Initialisation of the LCd
  	lcd.begin();  // initialize the LCD, 
 	lcd.backlight();  // Turn on the backlight and print a message.
   lcd.clear();
@@ -52,46 +49,127 @@ void setup() {
   lcd.setCursor (0,1); // set cursor at char 0, line 1
   lcd.print("Second line");
 
-  // Pulling up the built in PIN-pullups:
-  for (int i=0;i< pins;++i)
+// Pulling up the built in PIN-pullups:
+  for (int i=0;i< PINS;++i)
 {
  pinMode(i,INPUT_PULLUP);
 }
 
 // Initialisation of the Current Profile
-
 ProfileCurrent = ProfileDefault;
-
-
+Hmi.InitRot();
+Hmi.LCDprint(lcd,ProfileCurrent);
 } //  END of Setup  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
-
+void loop() { // put your main code here, to run repeatedly:
 
 if(Ping.GetTime())
 {
 
 DeltaTime.CalculateTimediff(Ping.time_stamp);
 
-
-//Revs.ApplyFilter(DeltaTime.time_difference);
-
-
 if(DeltaTime.time_difference) // Since with only the first signal the timedifference and the subsequent values can´t be calculated,
                               // the subsequent will be calculated only after the second signal was received.
 {
+Revs.FillBuffer(DeltaTime.time_difference);
+Revs.MedianAverageFilter(DeltaTime.time_difference);
+Revs.CalculateRpm();
+Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
+}
 
+Serial.println("---------------------------------------------- ");
+}
+Ping.SetSignalOrder();
+
+Throttle.ResetAxisValue(ProfileCurrent,Revs,Ping,DeltaTime); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonget time
+Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the Joystick.
+
+Hmi.NavigateMenu(lcd,ProfileCurrent); //  When the menubutton is pressed, the menu number "menu_count" is iterated.
+Hmi.Reset(lcd,ProfileCurrent);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
+Hmi.ChangeParameter(lcd,ProfileCurrent);  // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (!digitalRead(RSETBUT))
+{
+
+Serial.println("!!!!!!!!!!! reset button pressed !!!!!!!!!!!!!! ");
+Revs.ResetRpm(Ping,DeltaTime);
+}
+
+
+//Revs.ApplyFilter(DeltaTime.time_difference);
 //Revs.FillBuffer(DeltaTime.time_difference);
 //Revs.AverageFilter();
 
 //Revs.FillBuffer(DeltaTime.time_difference);
 //Revs.MedianFilter(DeltaTime.time_difference);
-
-Revs.FillBuffer(DeltaTime.time_difference);
-Revs.MedianAverageFilter(DeltaTime.time_difference);
-
 /* Das geht !!!!!!!!!!!!!
 unsigned long int median_average_difference=0;
 ++median_average_difference;
@@ -103,26 +181,11 @@ unsigned long int median_average_difference=0;
 
 //Revs.FillBuffer(Revs.av_time_difference);
 //Revs.AverageFilter();
-Revs.CalculateRpm();
-Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
-}
-Serial.println("---------------------------------------------- ");
-}
-Ping.SetSignalOrder();
 
-Throttle.ResetAxisValue(ProfileCurrent,Revs,Ping,DeltaTime); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonget time
-Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the Joystick.
 
-if (!digitalRead(RSETBUT))
-{
 
-Serial.println("!!!!!!!!!!! reset button pressed !!!!!!!!!!!!!! ");
-Revs.ResetRpm(Ping,DeltaTime);
-}
 
-}
-
-//  END of Loop, start of definitions  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}//  END of Loop, start of definitions  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 /////////////////////////////////////////////////////////////// FUnction to check the Buttons ///////////////////////////////////////////////////////////////////////////
 
@@ -152,10 +215,10 @@ Revs.ResetRpm(Ping,DeltaTime);
 
 
 //////////////////////////////////////////////////////////////// Test-FUnction to check the Buttons //////////////////////////////////////////////////////////////////////////
-
+/*
 void CheckButtons(void)
 {
- for (int i=0;i<pins;++i)
+ for (int i=0;i<PINS;++i)
 {
 
   if (!digitalRead(i) && Pin[i] == 0)
@@ -184,9 +247,9 @@ else if(digitalRead(i) != 0 && Pin[i]==1)
 }
 }
 }
-
+*/
 //////////////////////////////////////////////////////////////// Test-FUnction to PrintValues //////////////////////////////////////////////////////////////////////////
-
+/*
 void PrintValues(void)
 {
   Serial.print("ProfileDefault.profile_name: ");
@@ -207,3 +270,4 @@ void PrintValues(void)
   Serial.print("ProfileCurrent.max_rpm: ");
   Serial.println(ProfileCurrent.max_rpm);
 }
+*/
