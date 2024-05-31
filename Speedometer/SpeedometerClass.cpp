@@ -46,9 +46,9 @@ Serial.println(time_difference);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////// Stores the current sample value in a buffer array (FIFO-princip).///////////////////
-void Rpm::FillBuffer(const unsigned long int &time_difference)
+void Rpm::FillBuffer(const unsigned long int &time_difference,Profile &ProfileCurrent)
 {
-if(sample_count < sample_size)  // If the number of samples in the buffer is less than the length of the buffer, 
+if(sample_count < ProfileCurrent.sample_size)  // If the number of samples in the buffer is less than the length of the buffer, 
                                 // the current sample is attached behind the last sample in the abuffer.
 {
    sample_buffer[sample_count]=time_difference; // The current sample is stored behind the last sample in the abuffer.
@@ -57,11 +57,11 @@ if(sample_count < sample_size)  // If the number of samples in the buffer is les
 else  // If the sample size is equal to the length of the buffer, the stored sample values are shifted to the left and the left
       // and the current sample value is stored at the end of the buffer. In this process, the oldest/first sample value is deleted.
 {
-for (int i=0;i<sample_size-1;++i) 
+for (int i=0;i<ProfileCurrent.sample_size-1;++i) 
 { // The stored sample values are shifted to the left. In this process, the oldest/first sample value is deleted.
   sample_buffer[i] = sample_buffer[i+1];
   }
-  sample_buffer[sample_size-1]=time_difference; // The current sample value is stored at the end of the buffer.
+  sample_buffer[ProfileCurrent.sample_size-1]=time_difference; // The current sample value is stored at the end of the buffer.
 }
 // Print the sample_buffer array ///////////////////////
 Serial.print("sample_buffer: ");
@@ -144,7 +144,7 @@ Serial.println(av_time_difference);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////// This method calculates the averaged timedifferences by combining the medianfilter and averagefilter to the buffer.////
-void Rpm::MedianAverageFilter(const unsigned long int &time_difference)
+void Rpm::MedianAverageFilter(const unsigned long int &time_difference,Profile &ProfileCurrent)
 {
  // Medianfilter ///////////////////////////////////////////////////////////
  if(sample_count<=1) // If the number of samples is <= 1, the filter is not applied and the current time_difference is taken as it is. 
@@ -197,7 +197,7 @@ Serial.println(av_time_difference);
 
 // Buffer, in which the Median-filtered sample values are stored. ///////////////////////////////////////////
 // Stores the current sample value in a buffer array (FIFO-princip).
-if(median_sample_count < sample_size)  // If the number of samples in the buffer is less than the length of the buffer, 
+if(median_sample_count < ProfileCurrent.sample_size)  // If the number of samples in the buffer is less than the length of the buffer, 
                                 // the current sample is attached behind the last sample in the abuffer.
 {
    median_sample_buffer[median_sample_count]=av_time_difference;  // The current sample is stored behind the last sample in the abuffer.
@@ -207,11 +207,11 @@ if(median_sample_count < sample_size)  // If the number of samples in the buffer
 else  // If the sample size is equal to the length of the buffer, the stored sample values are shifted to the left and the left
       // and the current sample value is stored at the end of the buffer. In this process, the oldest/first sample value is deleted.
 {
-for (int i=0;i<sample_size-1;++i) 
+for (int i=0;i<ProfileCurrent.sample_size-1;++i) 
 { // The stored sample values are shifted to the left. In this process, the oldest/first sample value is deleted.
   median_sample_buffer[i] = median_sample_buffer[i+1];
   }
-  median_sample_buffer[sample_size-1]=av_time_difference; // The current sample value is stored at the end of the buffer.
+  median_sample_buffer[ProfileCurrent.sample_size-1]=av_time_difference; // The current sample value is stored at the end of the buffer.
 }
 // Print the sample_buffer array ////////////////////
 Serial.print("median_sample_buffer: ");
@@ -282,7 +282,7 @@ Serial.println(timedifference.time_difference);
 Serial.print("previous_time_stamp: ");
 Serial.println(timedifference.previous_time_stamp);
 Serial.print("sample_buffer[");
-for(int i = 0;i<sample_size;++i)  // Zeroizes all the values in the array/buffer
+for(int i = 0;i<SAMPLEMAX;++i)  // Zeroizes all the values in the array/buffer
 {
   sample_buffer[i] = 0;
   
@@ -290,7 +290,7 @@ for(int i = 0;i<sample_size;++i)  // Zeroizes all the values in the array/buffer
 }
 Serial.println("] zeroized");
 Serial.print("median_sample_buffer[");
-for(int i = 0;i<sample_size;++i)  // Zeroizes all the values in the array/buffer
+for(int i = 0;i<SAMPLEMAX;++i)  // Zeroizes all the values in the array/buffer
 {
   median_sample_buffer[i] = 0;
   
@@ -330,7 +330,7 @@ throttle = AXISMINIMUM;
 //////////////////////////////////// Resets the Axisvalue to zero if no falling edge has been detected for a prolonged time.////////////////////////////////////////////////////////////////////////////////////////
 void AxisValue::ResetAxisValue(const Profile & profile,Rpm & rpm,Sensor &sensor,TimeDifference & timedifference)
 {
-if (millis() >= (sensor.time_stamp + (2 * (60000/SENSORS)/profile.min_rpm)) && throttle != AXISMINIMUM )  // Verifies whether a falling edge has been detected within a certain time period,
+if (millis() >= (sensor.time_stamp + ((60000/SENSORS)/profile.min_rpm)) && throttle != AXISMINIMUM )  // Verifies whether a falling edge has been detected within a certain time period,
                                                                                                 // whilst the axisvalue is not at its minimum.
                                                                                                 // Since the Axisvalue is calculate only when a falling edge has been detected, the Axisvalu would be stuck
                                                                                                 // on the last calculated value, if no new falling edge has been detected. E.g: abrupt stop of the rotation.
@@ -371,12 +371,14 @@ if(GetInput(ROTBUT))
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////This method resets the microcontroller to its default state //////////////////////////////
-void UserInput:: Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent) //When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0,
-                        // or their default values and all respective buffers and variables are cleared/zeroized.
+void UserInput:: Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,const Profile &ProfileDefault,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference) 
+// When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0,
+// or their default values and all respective buffers and variables are cleared/zeroized.
 {
 if(GetInput(RSETBUT))
 {
   Serial.println("Resetting: ");
+  rpm.ResetRpm(sensor,timedifference);
   for(int i = 0;i<PINS;++i)
 {
   pin_state[i] = 0;
@@ -390,6 +392,7 @@ rot_pin2 = ROTMENU2;
 rot_dir = 0;
 rot_state[2] = (false,false);
 menu_count = 0;
+ProfileCurrent=ProfileDefault;
 
 LCDprint(lcd,ProfileCurrent);
 }
@@ -658,6 +661,13 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent)
   { 
   Serial.println("PLACEHOLDER Filter decrease: TODO");
   Serial.println("---------------------------------------------------");
+  //ProfileCurrent.filter_name = filter[1];
+
+
+
+
+
+
   LCDprint(lcd,ProfileCurrent);
   }
   else if(result == DIR_CW)
@@ -800,8 +810,12 @@ bool UserInput::GetInput(const unsigned short int i)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+///*
+void UserInput::PrintString(String &filter)
+{
+  Serial.println(filter);
+}
+//*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

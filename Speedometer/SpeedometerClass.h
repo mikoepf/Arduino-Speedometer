@@ -22,7 +22,7 @@
 #define ROTMENU2      4       // Pinnumber of the Rotary-Encoder Button.
 #define ROTDELAY      100     // The delay in "milli seconds" between the rotary encoder input requests to avoid signal bouncing
 #define BUTTONDELAY   500     // The delay in "milli seconds" between the button input requests to avoid signal bouncing
-#define RPMMIN        1       // The lowest rpm threshold 
+#define RPMMIN        5       // The lowest rpm threshold 
 #define RPMMAX        200     // The highest rpm threshold 
 #define SAMPLEMIN     1       // The kowes sample threshold: At least this number of samples has to be stored in the buffer
 #define SAMPLEMAX     20      // The highest sample threshold: Maximal so many samples can be stored in the buffer
@@ -31,8 +31,8 @@
 
 struct Profile
 {
-  char profile_name[6];
-  char filter_name[3];
+  String profile_name;
+  String filter_name;
   unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
   unsigned short int min_rpm;// 3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
   unsigned short int sample_size;
@@ -75,40 +75,40 @@ unsigned long int* sample_buffer; // This is a pointer to a dynammicly allocated
                                       // , where the time_differences are stored (FIFO-princip).
 unsigned long int* median_sample_buffer; // This is a pointer to a dynammicly allocated buffer with the length of "sample_size".
                                       // , where the time_differences are stored (FIFO-princip).                                      
-unsigned short int sample_size; // Determines the size of the "sample_buffer" buffer.
-unsigned short int sample_count;  // Dtores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
+//unsigned short int sample_size; // Determines the size of the "sample_buffer" buffer.
+unsigned short int sample_count;  // Stores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int median_sample_count;  // Dtores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int rpm; // Stores the calculated revolutions per minute "rpm".
 char filter[6];     // Needs to be resolved !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   public:
 unsigned long int av_time_difference; // stores the averaged timedifferences which are calculated/filtered from the time-differences stored in the buffer.
-void FillBuffer(const unsigned long int &time_difference);  // Stores the current sample value in a buffer array (FIFO-princip).
+void FillBuffer(const unsigned long int &time_difference,Profile &ProfileCurrent);  // Stores the current sample value in a buffer array (FIFO-princip).
 void CalculateRpm();  // This method calculates the revolutions per minute "rpm" from the "av_time_difference".
 void ApplyFilter(const unsigned long int &time_difference); // Applies a filter selected in the menue.
 void AverageFilter(); // This method calculates the averaged timedifferences from the time-differences stored in the buffer
                                                               // by building a sum of all sample-values stored in the buffer and dividing it by the number of samples.
 void MedianFilter(const unsigned long int &time_difference);  // This method calculates the averaged timedifferences from the time-differences stored in the buffer
                                                               // by sorting the sample-values in ascednig order and taking the sample-values in the center (sample_count/2)
-void MedianAverageFilter(const unsigned long int &time_difference);  // This method calculates the averaged timedifferences from the time-differences stored in the buffer
+void MedianAverageFilter(const unsigned long int &time_difference,Profile &ProfileCurrent);  // This method calculates the averaged timedifferences from the time-differences stored in the buffer
                                                               // by combining the medianfilter and averagefilter to the buffer.
 void ResetRpm(Sensor & sensor,TimeDifference & timedifference);  // This method resets the rpm to 0 and clears/zeroizes all the respective buffers and variables.
 
 Rpm(const Profile & other)
 {
-sample_size = other.sample_size;
+//sample_size = other.sample_size;
 sample_count = median_sample_count=0;
 for(int i = 0;i<6;++i)
 {
   filter[i] = other.filter_name[i];
 }
-sample_buffer = new unsigned long int[sample_size];
-for(int i = 0;i<sample_size;++i)
+sample_buffer = new unsigned long int[SAMPLEMAX];
+for(int i = 0;i<SAMPLEMAX;++i)
 {
   sample_buffer[i] = 0;
 }
-median_sample_buffer = new unsigned long int[sample_size];
-for(int i = 0;i<sample_size;++i)
+median_sample_buffer = new unsigned long int[SAMPLEMAX];
+for(int i = 0;i<SAMPLEMAX;++i)
 {
   median_sample_buffer[i] = 0;
 }
@@ -158,9 +158,10 @@ bool GetInput(const unsigned short int i);  // Reads the signals on the given pi
 unsigned short int CheckRotaries(); // Reads the state of the given rotary (number).
 void ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent); // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
 void InitRot(); // Synchronizes the rotary encoder states at the begin of the programm.
-void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent); // Resets the Microcontroller
+void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,const Profile &ProfileDefault,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // Resets the Microcontroller
 void NavigateMenu(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Iterates the menus if the rotary encoder button is pressed.
 const void LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Prints the parameter & settings on the LCD Display
+void PrintString(String &filter);
 
 UserInput()
 {

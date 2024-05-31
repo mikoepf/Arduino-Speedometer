@@ -17,8 +17,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Classes and Struct Declarations /////////////////////////////////////////////////////////////////
-
-const Profile ProfileDefault={"STD","AVR", 85, 25, 6};
+String filter[3] = {"AVR","MED","MIX"};
+const Profile ProfileDefault={"STD","MIX", 85, 25, 6};
 Profile ProfileCurrent;
 Sensor Ping(0,0);
 TimeDifference DeltaTime(0,0);
@@ -71,12 +71,12 @@ DeltaTime.CalculateTimediff(Ping.time_stamp);
 if(DeltaTime.time_difference) // Since with only the first signal the timedifference and the subsequent values can´t be calculated,
                               // the subsequent will be calculated only after the second signal was received.
 {
-Revs.FillBuffer(DeltaTime.time_difference);
-Revs.MedianAverageFilter(DeltaTime.time_difference);
+Revs.FillBuffer(DeltaTime.time_difference,ProfileCurrent);
+Revs.MedianAverageFilter(DeltaTime.time_difference,ProfileCurrent);
 Revs.CalculateRpm();
 Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
 }
-
+Serial.println(filter[1]);
 Serial.println("---------------------------------------------- ");
 }
 Ping.SetSignalOrder();
@@ -85,9 +85,9 @@ Throttle.ResetAxisValue(ProfileCurrent,Revs,Ping,DeltaTime); // Resets the Axisv
 Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the Joystick.
 
 Hmi.NavigateMenu(lcd,ProfileCurrent); //  When the menubutton is pressed, the menu number "menu_count" is iterated.
-Hmi.Reset(lcd,ProfileCurrent);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
+Hmi.Reset(lcd,ProfileCurrent,ProfileDefault,Revs,Ping,DeltaTime);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
 Hmi.ChangeParameter(lcd,ProfileCurrent);  // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
-
+//Hmi.PrintString(filter[0]);
 
 
 
