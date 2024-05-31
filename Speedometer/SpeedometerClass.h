@@ -6,8 +6,7 @@
 //#include <Wire.h>           // This library allows you to communicate with I2C devices.
 #include <LiquidCrystal_I2C.h>  // This library allows you to communicate with I2C Liquid crystal Display.
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define axis_maximum  1023    // Maximumvalue of the axis-range.
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////.
 #define AXISMINIMUM   0       // Minimumvalue of the axis-range.
 #define AXISMAXIMUM   1023    // Maximumvalue of the axis-range.
 #define NUMROTARIES   1       // Amount of rotary encoders attached to the Microkontroller
@@ -24,6 +23,7 @@
 #define BUTTONDELAY   500     // The delay in "milli seconds" between the button input requests to avoid signal bouncing
 #define RPMMIN        5       // The lowest rpm threshold 
 #define RPMMAX        200     // The highest rpm threshold 
+#define NUMFILTERS    3       // Amount of hardcoded filters
 #define SAMPLEMIN     1       // The kowes sample threshold: At least this number of samples has to be stored in the buffer
 #define SAMPLEMAX     20      // The highest sample threshold: Maximal so many samples can be stored in the buffer
 
@@ -62,7 +62,7 @@ class TimeDifference  // Determines the time between the last detected falling e
   public:
 unsigned long int previous_time_stamp;  // The time, when the last falling edge was detected, is stored here.
 unsigned long int time_difference;  // The time between the last detected falling edge and the currently detected falling edge is stored here.
-void CalculateTimediff(const unsigned long int &t_stamp); // Determines the time between the last detected falling edge and the currently detected falling edge.
+void CalculateTimediff(const unsigned long int &t_stamp,const Profile & profile);/*, const Rpm &rpm);*/ // Determines the time between the last detected falling edge and the currently detected falling edge.
 TimeDifference(): previous_time_stamp(0),time_difference(0){};
 TimeDifference(const unsigned long int p_stamp,const unsigned long int t_diff): previous_time_stamp(p_stamp),time_difference(t_diff) {};
 };
@@ -79,13 +79,13 @@ unsigned long int* median_sample_buffer; // This is a pointer to a dynammicly al
 unsigned short int sample_count;  // Stores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int median_sample_count;  // Dtores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int rpm; // Stores the calculated revolutions per minute "rpm".
-char filter[6];     // Needs to be resolved !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//char filter[6];     // Needs to be resolved !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   public:
 unsigned long int av_time_difference; // stores the averaged timedifferences which are calculated/filtered from the time-differences stored in the buffer.
 void FillBuffer(const unsigned long int &time_difference,Profile &ProfileCurrent);  // Stores the current sample value in a buffer array (FIFO-princip).
 void CalculateRpm();  // This method calculates the revolutions per minute "rpm" from the "av_time_difference".
-void ApplyFilter(const unsigned long int &time_difference); // Applies a filter selected in the menue.
+void ApplyFilter(const unsigned long int &time_difference,String filter[],Profile &ProfileCurrent); // Applies a filter selected in the menue.
 void AverageFilter(); // This method calculates the averaged timedifferences from the time-differences stored in the buffer
                                                               // by building a sum of all sample-values stored in the buffer and dividing it by the number of samples.
 void MedianFilter(const unsigned long int &time_difference);  // This method calculates the averaged timedifferences from the time-differences stored in the buffer
@@ -98,10 +98,12 @@ Rpm(const Profile & other)
 {
 //sample_size = other.sample_size;
 sample_count = median_sample_count=0;
+/*
 for(int i = 0;i<6;++i)
 {
   filter[i] = other.filter_name[i];
 }
+*/
 sample_buffer = new unsigned long int[SAMPLEMAX];
 for(int i = 0;i<SAMPLEMAX;++i)
 {
@@ -156,12 +158,13 @@ enum EnumRotState {DIR_NONE,DIR_CW,DIR_CCW};  // Represents the rotation directi
 enum EnumMenu {STARTMENU,PROFILE_LOAD,MINRPM,MAXRPM,FILTER,SAMPLE_SIZE,PROFILE_SAVE,MENUSIZE};  // Represents the different menus.
 bool GetInput(const unsigned short int i);  // Reads the signals on the given pin (number).
 unsigned short int CheckRotaries(); // Reads the state of the given rotary (number).
-void ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent); // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
+void ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,String filter[],Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // When the rotary encoder is rotaded, 
+                                                                                                      //the parameter in the currently active menu are altered respectively.
 void InitRot(); // Synchronizes the rotary encoder states at the begin of the programm.
 void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,const Profile &ProfileDefault,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // Resets the Microcontroller
 void NavigateMenu(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Iterates the menus if the rotary encoder button is pressed.
 const void LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Prints the parameter & settings on the LCD Display
-void PrintString(String &filter);
+//void PrintString(String filter[]);
 
 UserInput()
 {

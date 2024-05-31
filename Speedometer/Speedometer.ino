@@ -14,10 +14,15 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Testvariables declaration
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Classes and Struct Declarations /////////////////////////////////////////////////////////////////
-String filter[3] = {"AVR","MED","MIX"};
+
+//String filter[5] = {"AVR","MED","MIX","BLE","BOO"};
+String filter[NUMFILTERS] = {"AVR","MED","MIX"};
 const Profile ProfileDefault={"STD","MIX", 85, 25, 6};
 Profile ProfileCurrent;
 Sensor Ping(0,0);
@@ -63,20 +68,24 @@ Hmi.LCDprint(lcd,ProfileCurrent);
 
 void loop() { // put your main code here, to run repeatedly:
 
-if(Ping.GetTime())
+unsigned long get_time =Ping.GetTime(); // Sometimes the if() statement does not receive the return-value?????????????
+if(get_time)  // Sometimes the if() statement does not receive the return-value? Othervise would do: if(Ping.GetTime())
 {
 
-DeltaTime.CalculateTimediff(Ping.time_stamp);
+DeltaTime.CalculateTimediff(Ping.time_stamp,ProfileCurrent);  // ,Revs
+
 
 if(DeltaTime.time_difference) // Since with only the first signal the timedifference and the subsequent values can´t be calculated,
                               // the subsequent will be calculated only after the second signal was received.
 {
 Revs.FillBuffer(DeltaTime.time_difference,ProfileCurrent);
-Revs.MedianAverageFilter(DeltaTime.time_difference,ProfileCurrent);
+//Revs.MedianAverageFilter(DeltaTime.time_difference,ProfileCurrent);
+Revs.ApplyFilter(DeltaTime.time_difference, filter, ProfileCurrent);
 Revs.CalculateRpm();
 Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
+
 }
-Serial.println(filter[1]);
+//Serial.println(filter[1]);
 Serial.println("---------------------------------------------- ");
 }
 Ping.SetSignalOrder();
@@ -86,8 +95,8 @@ Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the 
 
 Hmi.NavigateMenu(lcd,ProfileCurrent); //  When the menubutton is pressed, the menu number "menu_count" is iterated.
 Hmi.Reset(lcd,ProfileCurrent,ProfileDefault,Revs,Ping,DeltaTime);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
-Hmi.ChangeParameter(lcd,ProfileCurrent);  // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
-//Hmi.PrintString(filter[0]);
+Hmi.ChangeParameter(lcd,ProfileCurrent,filter,Revs,Ping,DeltaTime);  // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
+//Hmi.PrintString(filter);
 
 
 

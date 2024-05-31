@@ -1,3 +1,4 @@
+#include "WString.h"
 #include "LiquidCrystal_I2C.h"
 #ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
 #define SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
@@ -29,15 +30,23 @@ signal_order = digitalRead(TACHO); // 0 if contact, else 1
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////// Determines the time between the last detected falling edge and the currently detected falling edge ///
-void TimeDifference::CalculateTimediff(const unsigned long int &t_stamp) 
+void TimeDifference::CalculateTimediff(const unsigned long int &t_stamp,const Profile & profile)/*, const Rpm &rpm)*/ 
 {
+  
   if (previous_time_stamp && previous_time_stamp < t_stamp) // If previous time stamp exists and it is < current timestamp "t_stamp"
   {
-time_difference = t_stamp - previous_time_stamp;  // Calculation fo the time between the previous falling edge detection and the current falling edge detection
+    if(t_stamp - previous_time_stamp <= 2*(60000/SENSORS)/profile.min_rpm )/* && rm.sample_count <= profile.sample_size/2)*/  // In order to avoid big timedifferences at a slow start, () 
+                                                                          // timedifferences below the min_rpm treshold will be ignored.
+    {
+      time_difference = t_stamp - previous_time_stamp;  // Calculation fo the time between the previous falling edge detection and the current falling edge detection
+    }else
+    {
+      time_difference = 0;
+    }
   }
   else 
   {
-time_difference=0;  // If there is no previous falling edge detection, or the current falling edge has a smaller timestemp E.g: because of clock overflow
+    time_difference=0;  // If there is no previous falling edge detection, or the current falling edge has a smaller timestemp E.g: because of clock overflow
   }
 Serial.print("current time_difference: ");
 Serial.println(time_difference);
@@ -189,7 +198,7 @@ av_time_difference = sorted_array[sample_count/2];// Stores the center sample va
                                                   // This is called the median"Filter". All the outlier are omitted, 
                                                   // since thy are either at the beginn, or at the end of the sorted array. 
 
-Serial.print("Medianfilter av_time_difference: ");
+Serial.print("Medianfilter within MIX av_time_difference: ");
 Serial.println(av_time_difference);
 
 }
@@ -241,10 +250,20 @@ Serial.println(av_time_difference);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////// Applies a filter selected in the menue. /////////////////////////////////////////////////
-void Rpm::ApplyFilter(const unsigned long int &time_difference)
+void Rpm::ApplyFilter(const unsigned long int &time_difference,String filter[],Profile &ProfileCurrent)
 {
- 
-
+ if(ProfileCurrent.filter_name==filter[0])
+ {
+  AverageFilter();
+ }
+ else if (ProfileCurrent.filter_name==filter[1]) 
+ {
+ MedianFilter(time_difference);
+ }
+ else
+ {
+ MedianAverageFilter(time_difference, ProfileCurrent);
+ }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -260,6 +279,7 @@ Serial.println(rpm);
 ////////////////////////////////// This method resets the rpm to 0 and clears/zeroizes all the respective buffers and variables.////
 void Rpm::ResetRpm(Sensor & sensor,TimeDifference & timedifference)
 {
+  Serial.println("Rpm-Rset in Progress:");
  sample_count = 0;
  median_sample_count = 0;
  av_time_difference = 0;
@@ -320,10 +340,10 @@ void AxisValue::CalculateAxisValue(const Profile & profile, const Rpm & rpm, Sen
                                                                       // 60000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"
   {
 throttle = AXISMINIMUM;
-   }
+  }
    else { // The av_time_difference is converted to the axisvalue
-    throttle = AXISMAXIMUM *(static_cast <double>((60000/SENSORS)/static_cast <double>(rpm.av_time_difference)-profile.min_rpm)/static_cast <double>(profile.max_rpm - profile.min_rpm));
-   }
+  throttle = AXISMAXIMUM *(static_cast <double>((60000/SENSORS)/static_cast <double>(rpm.av_time_difference)-profile.min_rpm)/static_cast <double>(profile.max_rpm - profile.min_rpm));
+  }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -526,7 +546,7 @@ const void UserInput::LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent )
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////This method changes the parameters according to the active menue and the rotary encoder inputs.//////////////////////////
-void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent)
+void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,String filter[],Rpm & rpm,Sensor & sensor,TimeDifference & timedifference)
 {
   unsigned short int result = CheckRotaries();
   switch(menu_count)
@@ -659,22 +679,104 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent)
 { 
   if (result == DIR_CCW)
   { 
-  Serial.println("PLACEHOLDER Filter decrease: TODO");
+  Serial.println("PLACEHOLDER Filter decrease: PROCESSING");
   Serial.println("---------------------------------------------------");
-  //ProfileCurrent.filter_name = filter[1];
+
+ // ProfileCurrent.filter_name = filter[1];
+  //rpm.ResetRpm(sensor,timedifference);
+ int i = 0;
+    Serial.println("i before do loop: ");
+    Serial.println(i);
+ // for(;ProfileCurrent.filter_name == filter[i];++i);
+ if(ProfileCurrent.filter_name != filter[i])
+ {
+ do{++i;Serial.println(i);}while(ProfileCurrent.filter_name != filter[i] && i < NUMFILTERS-1);
+ }
+ Serial.print("i after do loop: ");
+ Serial.println(i);
+
+  if( i == 0)
+  {
+    ProfileCurrent.filter_name = filter[NUMFILTERS-1];
+    Serial.print("Filter Decrease-Reset at [");
+    Serial.print(i);
+    Serial.print("] =>");
+    Serial.println(ProfileCurrent.filter_name);
+    Serial.print("[");
+    Serial.print(NUMFILTERS-1);
+    Serial.println("]");
+  }else if(i > 0)  
+  {
+    ProfileCurrent.filter_name = filter[i-1];
+    Serial.print("Filter Decrease at [");
+    Serial.print(i);
+    Serial.print("] =>");
+    Serial.print(ProfileCurrent.filter_name);
+    Serial.print("[");
+    Serial.print(i-1);
+    Serial.println("]");
+  }  
 
 
-
-
+ 
+/*
+  Serial.print("sizeof(filter) =>");
+  Serial.println(sizeof(filter));
+  Serial.print("sizeof(filter[1]) =>");
+  Serial.println(sizeof(filter[0]));
+  */
+  Serial.println("---------------------------------------------------");
 
 
   LCDprint(lcd,ProfileCurrent);
+  rpm.ResetRpm(sensor, timedifference);
   }
   else if(result == DIR_CW)
   {
-  Serial.println("PLACEHOLDER Filter increase: TODO");
+      Serial.println("PLACEHOLDER Filter increase: PROCESSING");
   Serial.println("---------------------------------------------------");
+int i = 0;
+    Serial.println("i before do loop: ");
+    Serial.println(i);
+  if(ProfileCurrent.filter_name != filter[i])
+ {
+ do{++i;Serial.println(i);}while(ProfileCurrent.filter_name != filter[i] && i < NUMFILTERS-1);
+ }
+     Serial.print("i after do loop: ");
+    Serial.println(i);
+  if( i == NUMFILTERS-1)
+  {
+    ProfileCurrent.filter_name = filter[0];
+    Serial.print("Filter Increase-Reset at [");
+    Serial.print(i);
+    Serial.print("] =>");
+  Serial.print(ProfileCurrent.filter_name);
+      Serial.print("[");
+    Serial.print(0);
+    Serial.println("]");
+  }else if(i < NUMFILTERS-1)  
+  {
+    ProfileCurrent.filter_name = filter[i+1];
+    Serial.print("Filter Increase at [");
+    Serial.print(i);
+    Serial.print("] =>");
+    Serial.print(ProfileCurrent.filter_name);
+        Serial.print("[");
+    Serial.print(i+1);
+    Serial.println("]");
+  }
+
+/*
+  Serial.print("sizeof(filter) =>");
+  Serial.println(sizeof(filter));
+  Serial.print("sizeof(filter[1]) =>");
+  Serial.println(sizeof(filter[0]));
+  */
+  Serial.println("---------------------------------------------------");
+
   LCDprint(lcd,ProfileCurrent);
+
+  rpm.ResetRpm(sensor, timedifference);
   }
 }
    break;
@@ -809,13 +911,13 @@ bool UserInput::GetInput(const unsigned short int i)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///*
-void UserInput::PrintString(String &filter)
+///////////////////////////////////////Testfunction/////////////////////////////////////////
+/*
+void UserInput::PrintString(String filter[])
 {
-  Serial.println(filter);
+  Serial.println(filter[0]);
 }
-//*/
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
