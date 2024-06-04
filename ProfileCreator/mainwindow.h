@@ -21,8 +21,8 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-//public slots:
- //   void LoadProfile();
+public slots:
+    void LoadProfile();
 
 
 private:

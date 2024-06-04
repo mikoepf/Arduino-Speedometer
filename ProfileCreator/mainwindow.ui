@@ -72,7 +72,11 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QComboBox" name="filterComboBox"/>
+      <widget class="QComboBox" name="filterComboBox">
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item row="5" column="0">
       <widget class="QLabel" name="sample_numberLabel">
@@ -82,7 +86,7 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QLineEdit" name="sample_numberLlineEdit"/>
+      <widget class="QLineEdit" name="sample_numberLineEdit"/>
      </item>
     </layout>
    </widget>
