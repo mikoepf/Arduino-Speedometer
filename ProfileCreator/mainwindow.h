@@ -21,10 +21,16 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+//public slots:
+ //   void LoadProfile();
+
+
 private:
     Ui::MainWindow *ui;
+    QSqlQueryModel *sql;
 };
 #endif // MAINWINDOW_H
+
 
 
 
