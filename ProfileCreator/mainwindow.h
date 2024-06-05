@@ -27,6 +27,7 @@ public slots:
     void LoadDefault();
     void Delete();
     void Save();
+    void RefreshProfileCB();
 
 
 private:
