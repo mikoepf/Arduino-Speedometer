@@ -56,6 +56,28 @@ void MainWindow::LoadProfile()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::LoadDefault()
 {
+    QSqlQuery queryprof("select * from Profiles where PName = 'Default'");
+    bool ret;
+
+    if (queryprof.next())
+    {
+        ui->profile_nameLineEdit->setText(queryprof.value(1).toString());
+        ui->min_rpmLineEdit->setText(queryprof.value(2).toString());
+        ui->max_rpmLineEdit->setText(queryprof.value(3).toString());
+        ui->sample_numberLineEdit->setText(queryprof.value(4).toString());
+        int entry = ui->filterComboBox->findData(queryprof.value(5).toString());
+        ui->filterComboBox->setCurrentIndex(entry);
+
+    ret=queryprof.exec();
+    if(!ret)
+    {
+        QMessageBox msg;
+        msg.setText("Default-Profile could not be loaded!");
+        msg.setWindowTitle("Error");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }
+    }
 
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,8 +98,17 @@ void MainWindow::Delete()
 {
 
     QVariant variantprofile = ui->load_profileComboBox->currentText();
- //   QSqlQuery queryprofile("select * from Filters where PName = '" + variantprofile.toString() + "'");
 
+    if (variantprofile.toString() == "Default")
+    {
+        QMessageBox msg;
+        msg.setText("Default profile can´t be deleted!");
+        msg.setWindowTitle("NOTE");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }
+    else
+    {
     QSqlQuery erase;
     bool ret;
     erase.exec("delete from Profiles where PName = '" + variantprofile.toString() + "'");
@@ -92,6 +123,7 @@ void MainWindow::Delete()
         msg.setWindowTitle("Fehler");
         msg.addButton("Ok",QMessageBox::YesRole);
         msg.exec();
+    }
     }
 
 }
@@ -120,7 +152,6 @@ void MainWindow::Save()
         }
         update.bindValue(":pid",queryprof.value(0).toString());
         ret=update.exec();
-        RefreshProfileCB();
         if(!ret)
         {
             QMessageBox msg;

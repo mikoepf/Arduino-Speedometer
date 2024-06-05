@@ -55,6 +55,7 @@ static bool createconnection()
     query.exec("insert into Filters (FName) values ('MED')");
     query.exec("insert into Filters (FName) values ('MIX')");
 
+    query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Default','30','80','6', 1)");
     query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Dirt_Fast','45','90','6', 3)");
     query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Dirt_Slow','15','80','10', 3)");
     query.exec("delete from Profiles where PName = 'Dirt_Slow'");
