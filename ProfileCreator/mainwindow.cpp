@@ -83,6 +83,7 @@ void MainWindow::LoadDefault()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::RefreshProfileCB()
 {
+
     //QSqlQuery queryprof("select * from Profiles where PName = '" + ui->profile_nameLineEdit->text() + "'");
     ui->load_profileComboBox->clear();
     QSqlQuery queryprofile("select * from Profiles");
@@ -119,17 +120,40 @@ void MainWindow::Delete()
     {
 
         QMessageBox msg;
-        msg.setText("Deletion was unsuccessful PID: " + variantprofile.toString());
+        msg.setText("Could not delete the Profile: " + variantprofile.toString());
         msg.setWindowTitle("Fehler");
         msg.addButton("Ok",QMessageBox::YesRole);
         msg.exec();
     }
+    QMessageBox msg;
+    msg.setText("Successfully deleted the Profile: " + variantprofile.toString());
+    msg.setWindowTitle("Info");
+    msg.addButton("Ok",QMessageBox::YesRole);
+    msg.exec();
     }
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::Save()
 {
+      //  END Range Validation
+    if(ui->min_rpmLineEdit->text().toInt() > ui->max_rpmLineEdit->text().toInt()-5 || ui->max_rpmLineEdit->text().toInt()>200 || ui->min_rpmLineEdit->text().toInt()<0)
+    {
+        QMessageBox msg;
+        msg.setText("Range: 0-200, MINrpm <= MAXrpm - 5 !!!!!!!!");
+        msg.setWindowTitle("Error");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }else if(ui->sample_numberLineEdit->text().toInt()>20 || ui->sample_numberLineEdit->text().toInt()<0)
+    {
+        QMessageBox msg;
+        msg.setText("Sample Number range: 0-20!!!!!!!!");
+        msg.setWindowTitle("Error");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }else {
+
+
 
     QVariant variantfilter = ui->filterComboBox->currentText();
     QSqlQuery queryfilter("select * from Filters where FName = '" + variantfilter.toString() + "'");
@@ -155,11 +179,16 @@ void MainWindow::Save()
         if(!ret)
         {
             QMessageBox msg;
-            msg.setText("Fehler beim updaten in der Datenbank filterfk: " + queryfilter.value(0).toString());
-            msg.setWindowTitle("Fehler");
+            msg.setText("Error while updating the Profile: " + queryprof.value(1).toString());
+            msg.setWindowTitle("Error");
             msg.addButton("Ok",QMessageBox::YesRole);
             msg.exec();
         }
+        QMessageBox msg;
+        msg.setText("Successfully updated the Profile: " + queryprof.value(1).toString());
+        msg.setWindowTitle("Info");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
     }
     else
     {
@@ -179,17 +208,20 @@ void MainWindow::Save()
          RefreshProfileCB();
         if(!ret)
         {
-            QMessageBox msg;
-            msg.setText("Fehler beim speichern in der Datenbank -> filterfk" + queryfilter.value(0).toString());
-            msg.setWindowTitle("Fehler");
-            msg.addButton("Ok",QMessageBox::YesRole);
-            msg.exec();
+             QMessageBox msg;
+             msg.setText("Error while creating the Profile: " + ui->profile_nameLineEdit->text());
+             msg.setWindowTitle("Error");
+             msg.addButton("Ok",QMessageBox::YesRole);
+             msg.exec();
         }
-
-
+        QMessageBox msg;
+        msg.setText("Successfully created the Profile: " + ui->profile_nameLineEdit->text());
+        msg.setWindowTitle("Info");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
     }
 
-
+ }  //  END Range Validation
 
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>538</width>
-    <height>340</height>
+    <height>314</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <rect>
       <x>30</x>
       <y>30</y>
-      <width>291</width>
+      <width>301</width>
       <height>176</height>
      </rect>
     </property>
@@ -27,7 +27,7 @@
      <item row="0" column="0">
       <widget class="QLabel" name="load_profileLabel">
        <property name="text">
-        <string>Load profile</string>
+        <string>Existing profiles</string>
        </property>
       </widget>
      </item>
@@ -42,7 +42,14 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="profile_nameLineEdit"/>
+      <widget class="QLineEdit" name="profile_nameLineEdit">
+       <property name="toolTip">
+        <string>Max 11 Characters!</string>
+       </property>
+       <property name="maxLength">
+        <number>11</number>
+       </property>
+      </widget>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="min_rpmLabel">
@@ -52,7 +59,20 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QLineEdit" name="min_rpmLineEdit"/>
+      <widget class="QLineEdit" name="min_rpmLineEdit">
+       <property name="toolTip">
+        <string> Range: 0-200, MINrpm &lt;= MAXrpm - 5 !!!!!!!!</string>
+       </property>
+       <property name="inputMethodHints">
+        <set>Qt::ImhDigitsOnly</set>
+       </property>
+       <property name="maxLength">
+        <number>3</number>
+       </property>
+       <property name="placeholderText">
+        <string>0 - 200</string>
+       </property>
+      </widget>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="max_rpmLabel">
@@ -62,7 +82,20 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QLineEdit" name="max_rpmLineEdit"/>
+      <widget class="QLineEdit" name="max_rpmLineEdit">
+       <property name="toolTip">
+        <string> Range: 0-200, MINrpm &lt;= MAXrpm - 5 !!!!!!!!</string>
+       </property>
+       <property name="inputMethodHints">
+        <set>Qt::ImhDigitsOnly</set>
+       </property>
+       <property name="maxLength">
+        <number>3</number>
+       </property>
+       <property name="placeholderText">
+        <string>0 - 200</string>
+       </property>
+      </widget>
      </item>
      <item row="4" column="0">
       <widget class="QLabel" name="filterLabel">
@@ -86,7 +119,26 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QLineEdit" name="sample_numberLineEdit"/>
+      <widget class="QLineEdit" name="sample_numberLineEdit">
+       <property name="contextMenuPolicy">
+        <enum>Qt::DefaultContextMenu</enum>
+       </property>
+       <property name="toolTip">
+        <string>0 - 20</string>
+       </property>
+       <property name="inputMethodHints">
+        <set>Qt::ImhDialableCharactersOnly|Qt::ImhDigitsOnly|Qt::ImhFormattedNumbersOnly</set>
+       </property>
+       <property name="inputMask">
+        <string/>
+       </property>
+       <property name="maxLength">
+        <number>2</number>
+       </property>
+       <property name="placeholderText">
+        <string>0 - 20</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -95,7 +147,7 @@
      <rect>
       <x>30</x>
       <y>210</y>
-      <width>481</width>
+      <width>491</width>
       <height>80</height>
      </rect>
     </property>
@@ -103,14 +155,14 @@
      <item>
       <widget class="QPushButton" name="load_defaultPushButton">
        <property name="text">
-        <string>Load default</string>
+        <string>Load default Profile</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="save_profilePushButton">
        <property name="text">
-        <string>Save</string>
+        <string>Save / Update Profile</string>
        </property>
       </widget>
      </item>
@@ -119,7 +171,7 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>340</x>
       <y>30</y>
       <width>181</width>
       <height>26</height>
