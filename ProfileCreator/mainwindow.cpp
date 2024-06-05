@@ -9,7 +9,10 @@ MainWindow::MainWindow(QWidget *parent)
     this->setWindowTitle("Profile Management");
     sql = new QSqlQueryModel();
 
-    QObject::connect(ui->loadButton,SIGNAL(clicked(bool)),SLOT(LoadProfile()));
+    QObject::connect(ui->load_profilePushButton,SIGNAL(clicked(bool)),SLOT(LoadProfile()));
+    QObject::connect(ui->load_defaultPushButton,SIGNAL(clicked(bool)),SLOT(LoadDefault()));
+    QObject::connect(ui->delete_profilePushButton,SIGNAL(clicked(bool)),SLOT(Delete()));
+    QObject::connect(ui->save_profilePushButton,SIGNAL(clicked(bool)),SLOT(Save()));
 
 
     // Profil-Combobox mit dem Inhalt der Tabelle Profile füllen
@@ -20,84 +23,161 @@ MainWindow::MainWindow(QWidget *parent)
         // in der Combobox steht sichbarer Teil (PName)
         // und ein unsichtbarer Teil (PID)
         QString visibleprof = queryprof.value(1).toString();
-        //ui->load_profileComboBox->addItem(visibleprof);
         ui->load_profileComboBox->addItem(visibleprof,queryprof.value(0));
-       // int currentindex = ui->load_profileComboBox->currentIndex();
-       // ui->profile_nameLineEdit->setText(visibleprof[3]);
-
-       // ui->profile_nameLineEdit->setText("visibleprof");
     }
 
-    // Filter-Combobox mit dem Inhalt der Tabelle Filter füllen
     QSqlQuery queryfilter("select * from Filters");
     while (queryfilter.next())
     {
-      //  int currentindex = ui->load_profileComboBox->currentIndex();
-       // int test = 1;
-        // in der Combobox steht sichbarer Teil (FName)
-        // und ein unsichtbarer Teil (FID)
         QString sichtbarfilter = queryfilter.value(1).toString();
         ui->filterComboBox->addItem(sichtbarfilter,queryfilter.value(0));
-
-        //ui->filterComboBox->addItem(sichtbarfilter,queryfilter.value(0));
-
-       //  ui->filterComboBox->setCurrentIndex(currentindex);
     }
   //  QObject::connect(ui->saveButton,SIGNAL(clicked(bool)),SLOT(save()));
   //  QObject::connect(ui->deleteButton,SIGNAL(clicked(bool)),SLOT(deleteKontakt()));
   //  QObject::connect(ui->quitButton,SIGNAL(clicked(bool)),SLOT(quit()));
 }
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MainWindow::LoadProfile()
 {
-   // int currentindex = ui->load_profileComboBox->currentIndex();
-
-   // int fcurrentindex = ui->load_profileComboBox->currentData();
 
     QVariant variantprof = ui->load_profileComboBox->currentText();
-    int plzid = variantprof.toInt();
-    //int PID = query.value(1).toString();
-   // std::string str = variant.toString();
-
-
-
-    //QSqlQuery query("select * from Profiles where PID = 1");
     QSqlQuery queryprof("select * from Profiles where PName = '" + variantprof.toString() + "'");
-    // QSqlQuery query("select * from Profiles where PName = 'Assetto F1'");
+
     if (queryprof.next())
     {
-
         ui->profile_nameLineEdit->setText(queryprof.value(1).toString());
         ui->min_rpmLineEdit->setText(queryprof.value(2).toString());
         ui->max_rpmLineEdit->setText(queryprof.value(3).toString());
         ui->sample_numberLineEdit->setText(queryprof.value(4).toString());
-
-        //QSqlQuery queryprof("select * from Filters where FID = " [ queryfilter.value(5).toInt()] );
-        //int entry = query.value(5).toInt();
-        //ui->filterComboBox->setCurrentIndex(queryfilter.value(1).toInt());
-        //ui->filterComboBox->setCurrentIndex(1);
-       //QVariant variantfilter = ui->load_profileComboBox->currentData();
-        QVariant variantfilter = ui->load_profileComboBox->currentData();
-        //ui->sample_numberLineEdit->setText(variantfilter.toString());
-
-
-
         int entry = ui->filterComboBox->findData(queryprof.value(5).toString());
         ui->filterComboBox->setCurrentIndex(entry);
-
-/*
-//QSqlQuery queryfilter("select * from Filters where FID = " + variantfilter.toString() + "'" );
-        QSqlQuery queryfilterr("select * from Filters where FID = " + queryprof.value(5).toString() + "'" );
-        if (queryfilterr.next())
-        {
-        //ui->filterComboBox->setCurrentIndex(queryfilter.value(1).toInt());
-        ui->filterComboBox->setCurrentText(queryfilterr.value(0).toString());
-        ui->sample_numberLineEdit->setText(queryfilterr.value(0).toString());
-        }
-*/
     }
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MainWindow::LoadDefault()
+{
 
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MainWindow::Delete()
+{
+
+      QSqlQuery queryprof("select * from Profiles where PName = '" + ui->profile_nameLineEdit->text() + "'");
+      QSqlQuery erase;
+      bool ret;
+    erase.exec("delete from Profiles where PName = '" + ui->profile_nameLineEdit->text() + "'");
+
+    //  ui->load_profileComboBox->clear();
+    QSqlQuery queryprofile("select * from Profiles");
+      while (queryprof.next())
+      {
+    QString visibleprof = queryprofile.value(1).toString();
+    ui->load_profileComboBox->addItem(visibleprof,queryprof.value(0));
+      }
+
+      ret=erase.exec();
+    if(!ret)
+    {
+        QMessageBox msg;
+        msg.setText("Deletion was unsuccessful PID: " + queryprof.value(0).toString());
+        msg.setWindowTitle("Fehler");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }
+
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MainWindow::Save()
+{
+   // QVariant variantprof = ui->load_profileComboBox->currentText();
+  //  QSqlQuery queryprof("select * from Profiles where PName = '" + variantprof.toString() + "'");
+
+
+    QVariant variantfilter = ui->filterComboBox->currentText();
+    QSqlQuery queryfilter("select * from Filters where FName = '" + variantfilter.toString() + "'");
+    QSqlQuery queryprof("select * from Profiles where PName = '" + ui->profile_nameLineEdit->text() + "'");
+
+   // QVariant variant = ui->postleitzahlComboBox->itemData(currentindex);
+   // int plzid = variant.toInt();
+    bool ret;
+
+    if(queryprof.next())
+    {
+        QSqlQuery update;
+        //update.prepare("update Profiles set PName=:pname, MINrpm=:minrpm, MAXrpm=:maxrpm, SNumber=:snumber, FilterFK=:filterfk where PID=:pid");
+        update.prepare("update Profiles set MINrpm=:minrpm, MAXrpm=:maxrpm, SNumber=:snumber, FilterFK=:filterfk where PID=:pid");
+        //update.bindValue(":pname", ui->profile_nameLineEdit->text());
+        update.bindValue(":minrpm", ui->min_rpmLineEdit->text());
+        update.bindValue(":maxrpm", ui->max_rpmLineEdit->text());
+        update.bindValue(":snumber", ui->sample_numberLineEdit->text());
+        if(queryfilter.next())
+        {
+        update.bindValue(":filterfk", queryfilter.value(0).toString());
+        }
+        update.bindValue(":pid",queryprof.value(0).toString());
+        ret=update.exec();
+        if(!ret)
+        {
+            QMessageBox msg;
+            msg.setText("Fehler beim updaten in der Datenbank filterfk: " + queryfilter.value(0).toString());
+            msg.setWindowTitle("Fehler");
+            msg.addButton("Ok",QMessageBox::YesRole);
+            msg.exec();
+        }
+    }
+    else
+    {
+        QSqlQuery insert;
+       // insert.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Dirt_Fastz','99','89','4', 2)");
+
+        //QSqlQuery insert;
+        insert.prepare("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values (:pname,:minrpm,:maxrpm,:snumber,:filterfk)");
+        // insert.prepare("insert into Profiles (PName) values (:name)");
+        // Einfügen der Daten in die Platzhalter
+
+         insert.bindValue(":pname", ui->profile_nameLineEdit->text());
+         insert.bindValue(":minrpm", ui->min_rpmLineEdit->text());
+         insert.bindValue(":maxrpm", ui->max_rpmLineEdit->text());
+         insert.bindValue(":snumber", ui->sample_numberLineEdit->text());
+         if(queryfilter.next())
+         {
+             insert.bindValue(":filterfk", queryfilter.value(0).toString());
+         }
+        // insert.bindValue(":pid",queryprof.value(0).toString());
+/*
+         QMessageBox msg;
+         msg.setText("insert into filterfk: " + queryfilter.value(0).toString());
+         msg.setWindowTitle("Fehler");
+         msg.addButton("Ok",QMessageBox::YesRole);
+         msg.exec();
+
+
+        insert.bindValue(":pname", ui->profile_nameLineEdit->text());
+        insert.bindValue(":minrpm", ui->min_rpmLineEdit->text());
+        insert.bindValue(":maxrpm", ui->max_rpmLineEdit->text());
+        insert.bindValue(":snumber", ui->sample_numberLineEdit->text());
+        insert.bindValue(":filterfk", queryfilter.value(0).toString());
+       // insert.bindValue(":pid",queryprof.value(0).toString());
+
+*/
+
+        ret=insert.exec();
+        if(!ret)
+        {
+            QMessageBox msg;
+            msg.setText("Fehler beim speichern in der Datenbank -> filterfk" + queryfilter.value(0).toString());
+            msg.setWindowTitle("Fehler");
+            msg.addButton("Ok",QMessageBox::YesRole);
+            msg.exec();
+        }
+
+
+    }
+
+
+
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 MainWindow::~MainWindow()
 {
     delete ui;

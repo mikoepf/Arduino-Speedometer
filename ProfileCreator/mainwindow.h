@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QtSql>
+#include <QMessageBox>
 #include <QSqlQueryModel>
 
 //#include "profile.h"
@@ -23,6 +24,9 @@ public:
 
 public slots:
     void LoadProfile();
+    void LoadDefault();
+    void Delete();
+    void Save();
 
 
 private:
