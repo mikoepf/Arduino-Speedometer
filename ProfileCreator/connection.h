@@ -74,13 +74,18 @@ static bool createconnection()
                            primary key ('PID' autoincrement) \
                            foreign key ('FilterFK') references 'Filters' ('FID'))\
                 ");
+    qDebug() << query.exec("create table if not exists 'Storage' (\
+                           'SID' integer not null unique, \
+                           'Data' text not null, \
+                           primary key ('SID' autoincrement)) \
+                ");
     query.exec("delete from Profiles");
     query.exec("delete from Filters");
     query.exec("insert into Filters (FName) values ('AVR')");
     query.exec("insert into Filters (FName) values ('MED')");
     query.exec("insert into Filters (FName) values ('MIX')");
     query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Default','30','80','6', 1)");
-
+    query.exec("insert into Storage (Data) values ('../')");
 
 /*
                 // Testdaten    => solange man entwickelt

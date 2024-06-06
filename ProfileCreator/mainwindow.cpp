@@ -9,10 +9,19 @@ MainWindow::MainWindow(QWidget *parent)
     this->setWindowTitle("Profile Management");
     sql = new QSqlQueryModel();
 
+    // Anzeige der aktuellen Directory
+    // path = "C:/Users/KoepfM/source/QT/FileExplorer/";
+    QSqlQuery querystorage("select * from Storage");
+    querystorage.first();
+    path = querystorage.value(1).toString();
+   // readDir(path);   // "." ==> aktuelle Trajektorie
+    ui->dir_selectLineEdit->setText(path);
+
     QObject::connect(ui->load_profilePushButton,SIGNAL(clicked(bool)),SLOT(LoadProfile()));
     QObject::connect(ui->load_defaultPushButton,SIGNAL(clicked(bool)),SLOT(LoadDefault()));
     QObject::connect(ui->delete_profilePushButton,SIGNAL(clicked(bool)),SLOT(Delete()));
     QObject::connect(ui->save_profilePushButton,SIGNAL(clicked(bool)),SLOT(Save()));
+    QObject::connect(ui->dir_selectPushButton,SIGNAL(clicked(bool)),SLOT(dirSelect()));
 
 
     // Profil-Combobox mit dem Inhalt der Tabelle Profile füllen
@@ -181,12 +190,13 @@ void MainWindow::Save()
             msg.setWindowTitle("Error");
             msg.addButton("Ok",QMessageBox::YesRole);
             msg.exec();
-        }
+        }else{
         QMessageBox msg;
         msg.setText("Successfully updated the Profile: " + queryprof.value(1).toString());
         msg.setWindowTitle("Info");
         msg.addButton("Ok",QMessageBox::YesRole);
         msg.exec();
+        }
     }
     else
     {
@@ -227,7 +237,7 @@ void MainWindow::Save()
 void MainWindow::WriteFile()
 {
     // Create a file
-    QString file_name = "Profiles.cpp";   // QString filename="c:\\Data.txt" or QString filename="c:/Data.txt"
+    QString file_name = path + "Profiles.cpp";   // QString filename="c:\\Data.txt" or QString filename="c:/Data.txt"
     QFile::remove(file_name);
     QFile file(file_name);
     if (file.open(QIODevice::ReadWrite)) {
@@ -319,6 +329,7 @@ void MainWindow::WriteFile()
         while (queryprofile.next())
         {
             QSqlQuery queryfilter("select * from Filters where FID = '" + queryprofile.value(5).toString() + "'");
+            queryfilter.first();
             stream << "\"" + queryfilter.value(1).toString() + "\"";
             if(i<size-1)
             {
@@ -342,6 +353,69 @@ void MainWindow::WriteFile()
         msg.exec();
     }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void MainWindow::dirSelect()
+{
+    bool ret;
+    QFileDialog dialog(this);
+    // Optionen konfigurieren
+    dialog.setFileMode(QFileDialog::Directory);
+    // Öffnen des Dialogs
+    path = dialog.getExistingDirectory(this, "Choose directory for Profile.cpp storage", QDir::currentPath());
+    path += "/";
+    QSqlQuery updatestorage;
+    updatestorage.prepare("update Storage set Data=:data where SID=:sid");
+    //updatestorage.exec("update Storage set Data = '" + path +  "' where SID = 1" + QString::number(1));
+    updatestorage.bindValue(":data",path);
+    updatestorage.bindValue(":sid", QString::number(1));
+    // Anzeigen der FIles
+    //readDir(path);
+    ui->dir_selectLineEdit->setText(path);
+    ret=updatestorage.exec();
+    if(!ret)
+    {
+        QMessageBox msg;
+        msg.setText("Error while updating the Storage / Data to new path: " + path);
+        msg.setWindowTitle("Error");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }else{
+    QMessageBox msg;
+    msg.setText("Successfully updated Storage / Data to new path: " + path);
+    msg.setWindowTitle("Info");
+    msg.addButton("Ok",QMessageBox::YesRole);
+    msg.exec();
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+void MainWindow::readDir(QString path)
+{
+    // Den Inhalt einer Directory auslesen
+    QDir directory(path);
+    QStringList files = directory.entryList(QStringList() << "*.txt" << "*.cpp");
+
+    //filesModel->clear();
+
+    foreach(QString file, files)
+    {
+        QStandardItem *filename = new QStandardItem(file);
+        filesModel->appendRow(QList<QStandardItem*>() << filename);
+    }
+    // Setzen von Überschriften
+   // filesModel->setHeaderData(0,Qt::Horizontal, "Dateiname");
+
+    // Zuordnung der Datenstruktur filesModel zum Oberflächenelement filelistView
+
+   // ui->filelistView->setModel(filesModel);
+
+
+}
+
+*/
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 MainWindow::~MainWindow()

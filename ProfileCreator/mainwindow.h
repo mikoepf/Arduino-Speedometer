@@ -5,6 +5,9 @@
 #include <QtSql>
 #include <QMessageBox>
 #include <QSqlQueryModel>
+#include <QFileDialog>
+#include <QStandardItem>
+#include<QTextStream>
 
 //#include "profile.h"
 
@@ -29,11 +32,14 @@ public slots:
     void Save();
     void RefreshProfileCB();
     void WriteFile();
+    void dirSelect();   ///////////
 
 
 private:
     Ui::MainWindow *ui;
     QSqlQueryModel *sql;
+ //   void readDir(QString path); ////////////////
+    QString path;   /////////////////
 };
 #endif // MAINWINDOW_H
 
