@@ -28,6 +28,7 @@ public slots:
     void Delete();
     void Save();
     void RefreshProfileCB();
+    void WriteFile();
 
 
 private:

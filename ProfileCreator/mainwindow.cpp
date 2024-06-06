@@ -131,6 +131,7 @@ void MainWindow::Delete()
     msg.addButton("Ok",QMessageBox::YesRole);
     msg.exec();
     }
+    WriteFile();
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,9 +153,6 @@ void MainWindow::Save()
         msg.addButton("Ok",QMessageBox::YesRole);
         msg.exec();
     }else {
-
-
-
     QVariant variantfilter = ui->filterComboBox->currentText();
     QSqlQuery queryfilter("select * from Filters where FName = '" + variantfilter.toString() + "'");
     QSqlQuery queryprof("select * from Profiles where PName = '" + ui->profile_nameLineEdit->text() + "'");
@@ -220,10 +218,131 @@ void MainWindow::Save()
         msg.addButton("Ok",QMessageBox::YesRole);
         msg.exec();
     }
+    WriteFile();
 
  }  //  END Range Validation
 
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MainWindow::WriteFile()
+{
+    // Create a file
+    QString file_name = "Profiles.cpp";   // QString filename="c:\\Data.txt" or QString filename="c:/Data.txt"
+    QFile::remove(file_name);
+    QFile file(file_name);
+    if (file.open(QIODevice::ReadWrite)) {
+        QTextStream stream(&file);
+        stream << "#include \"Profiles.h\" " << Qt::endl;
+        stream << Qt::endl;
+
+        QSqlQuery queryprofile("select * from Profiles");
+        size_t size = 0;// = sizeof(queryprofile);
+
+        while (queryprofile.next())
+        {
+           ++size;
+        }
+        stream << "nsigned short int Profiles::pn = " + QString::number(size) + ";"<< Qt::endl;
+        queryprofile.first();
+        queryprofile.previous();
+///////////////////////////////////////////////
+        size_t i = 0;
+        stream << "String Profiles::profile_names [" + QString::number(size) + "] = {";
+        while (queryprofile.next())
+        {
+            //QString visibleprof = queryprofile.value(1).toString();
+            stream << "\"" + queryprofile.value(1).toString() + "\"";
+            if(i<size-1)
+            {
+            stream << ",";
+            }else{
+            stream << "};" << Qt::endl;
+            }
+            ++i;
+        }
+        i=0;
+        queryprofile.first();
+        queryprofile.previous();
+///////////////////////////////////////////////
+        stream << "unsigned short int Profiles::min_rpms[" + QString::number(size) + "] = {";
+        while (queryprofile.next())
+        {
+            //QString visibleprof = queryprofile.value(1).toString();
+            stream << "\"" + queryprofile.value(2).toString() + "\"";
+            if(i<size-1)
+            {
+                stream << ",";
+            }else{
+                stream << "};" << Qt::endl;
+            }
+            ++i;
+        }
+        i=0;
+        queryprofile.first();
+        queryprofile.previous();
+//////////////////////////////////////////////
+        stream << "unsigned short int Profiles::max_rpms[" + QString::number(size) + "] = {";
+        while (queryprofile.next())
+        {
+            //QString visibleprof = queryprofile.value(1).toString();
+            stream << "\"" + queryprofile.value(3).toString() + "\"";
+            if(i<size-1)
+            {
+                stream << ",";
+            }else{
+                stream << "};" << Qt::endl;
+            }
+            ++i;
+        }
+        i=0;
+        queryprofile.first();
+        queryprofile.previous();
+//////////////////////////////////////////////
+        stream << "unsigned short int Profiles::sample_sizes[" + QString::number(size) + "] = {";
+        while (queryprofile.next())
+        {
+            //QString visibleprof = queryprofile.value(1).toString();
+            stream << "\"" + queryprofile.value(4).toString() + "\"";
+            if(i<size-1)
+            {
+                stream << ",";
+            }else{
+                stream << "};" << Qt::endl;
+            }
+            ++i;
+        }
+        i=0;
+        queryprofile.first();
+        queryprofile.previous();
+/////////////////////////////////////////////
+        stream << "unsigned short int Profiles::filter_names[" + QString::number(size) + "] = {";
+        while (queryprofile.next())
+        {
+            QSqlQuery queryfilter("select * from Filters where FID = '" + queryprofile.value(5).toString() + "'");
+            stream << "\"" + queryfilter.value(1).toString() + "\"";
+            if(i<size-1)
+            {
+                stream << ",";
+            }else{
+                stream << "};" << Qt::endl;
+            }
+            ++i;
+        }
+////////////////////////////////////////////
+        QMessageBox msg;
+        msg.setText("*Profiles.cpp* has been created and written!");
+        msg.setWindowTitle("Info");
+        msg.addButton("Ok",QMessageBox::YesRole);
+        msg.exec();
+    }else{
+        QMessageBox msg;
+        msg.setText("The *Profiles.cpp* could not be written !");
+        msg.setWindowTitle("Error");
+        msg.addButton("OK", QMessageBox::YesRole);
+        msg.exec();
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 MainWindow::~MainWindow()
 {

@@ -6,6 +6,7 @@
 #include <QMessageBox>
 #include "QFile"
 #include "QDebug"
+#include <QTextStream>
 
 
 static bool createconnection()
