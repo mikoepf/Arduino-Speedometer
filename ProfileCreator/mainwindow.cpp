@@ -252,7 +252,7 @@ void MainWindow::WriteFile()
         {
            ++size;
         }
-        stream << "nsigned short int Profiles::pn = " + QString::number(size) + ";"<< Qt::endl;
+        stream << "unsigned short int Profiles::pn = " + QString::number(size) + ";"<< Qt::endl;
         queryprofile.first();
         queryprofile.previous();
 ///////////////////////////////////////////////
@@ -277,8 +277,7 @@ void MainWindow::WriteFile()
         stream << "unsigned short int Profiles::min_rpms[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
-            //QString visibleprof = queryprofile.value(1).toString();
-            stream << "\"" + queryprofile.value(2).toString() + "\"";
+            stream << queryprofile.value(2).toString();
             if(i<size-1)
             {
                 stream << ",";
@@ -294,8 +293,7 @@ void MainWindow::WriteFile()
         stream << "unsigned short int Profiles::max_rpms[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
-            //QString visibleprof = queryprofile.value(1).toString();
-            stream << "\"" + queryprofile.value(3).toString() + "\"";
+            stream <<  queryprofile.value(3).toString();
             if(i<size-1)
             {
                 stream << ",";
@@ -312,7 +310,7 @@ void MainWindow::WriteFile()
         while (queryprofile.next())
         {
             //QString visibleprof = queryprofile.value(1).toString();
-            stream << "\"" + queryprofile.value(4).toString() + "\"";
+            stream <<  queryprofile.value(4).toString();
             if(i<size-1)
             {
                 stream << ",";
@@ -325,7 +323,7 @@ void MainWindow::WriteFile()
         queryprofile.first();
         queryprofile.previous();
 /////////////////////////////////////////////
-        stream << "unsigned short int Profiles::filter_names[" + QString::number(size) + "] = {";
+        stream << "String Profiles::filter_names[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
             QSqlQuery queryfilter("select * from Filters where FID = '" + queryprofile.value(5).toString() + "'");
@@ -367,11 +365,10 @@ void MainWindow::dirSelect()
     path += "/";
     QSqlQuery updatestorage;
     updatestorage.prepare("update Storage set Data=:data where SID=:sid");
-    //updatestorage.exec("update Storage set Data = '" + path +  "' where SID = 1" + QString::number(1));
+
     updatestorage.bindValue(":data",path);
     updatestorage.bindValue(":sid", QString::number(1));
-    // Anzeigen der FIles
-    //readDir(path);
+
     ui->dir_selectLineEdit->setText(path);
     ret=updatestorage.exec();
     if(!ret)
@@ -390,31 +387,7 @@ void MainWindow::dirSelect()
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-void MainWindow::readDir(QString path)
-{
-    // Den Inhalt einer Directory auslesen
-    QDir directory(path);
-    QStringList files = directory.entryList(QStringList() << "*.txt" << "*.cpp");
 
-    //filesModel->clear();
-
-    foreach(QString file, files)
-    {
-        QStandardItem *filename = new QStandardItem(file);
-        filesModel->appendRow(QList<QStandardItem*>() << filename);
-    }
-    // Setzen von Überschriften
-   // filesModel->setHeaderData(0,Qt::Horizontal, "Dateiname");
-
-    // Zuordnung der Datenstruktur filesModel zum Oberflächenelement filelistView
-
-   // ui->filelistView->setModel(filesModel);
-
-
-}
-
-*/
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
