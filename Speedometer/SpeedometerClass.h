@@ -1,3 +1,4 @@
+#include "WString.h"
 #pragma once  // should prevent the multiple call of the header.
 
 #ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
@@ -78,11 +79,9 @@ unsigned long int* sample_buffer; // This is a pointer to a dynammicly allocated
                                       // , where the time_differences are stored (FIFO-princip).
 unsigned long int* median_sample_buffer; // This is a pointer to a dynammicly allocated buffer with the length of "sample_size".
                                       // , where the time_differences are stored (FIFO-princip).                                      
-//unsigned short int sample_size; // Determines the size of the "sample_buffer" buffer.
 unsigned short int sample_count;  // Stores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int median_sample_count;  // Dtores the number of currently availeable samples as long as the buffer is not full(sample_count<sample_size). 
 unsigned short int rpm; // Stores the calculated revolutions per minute "rpm".
-//char filter[6];     // Needs to be resolved !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   public:
 unsigned long int av_time_difference; // stores the averaged timedifferences which are calculated/filtered from the time-differences stored in the buffer.
@@ -99,14 +98,9 @@ void ResetRpm(Sensor & sensor,TimeDifference & timedifference);  // This method 
 
 Rpm(const Profile & other)
 {
-//sample_size = other.sample_size;
+
 sample_count = median_sample_count=0;
-/*
-for(int i = 0;i<6;++i)
-{
-  filter[i] = other.filter_name[i];
-}
-*/
+
 sample_buffer = new unsigned long int[SAMPLEMAX];
 for(int i = 0;i<SAMPLEMAX;++i)
 {
@@ -194,30 +188,21 @@ delete[] pin_state;
 
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-class LoadProfile
+
+class Copy
 {
   private:
-double throttle;  // The Axisvalue of the Joystick is stored here. It is called "Throttle" since the Joistick-Axis is defined as throttle-axis
+
   public:
-void CalculateAxisValue(const Profile & profile, const Rpm & rpm, Sensor &sensor); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
-void SetAxisValue(Joystick_ &Joystick ); // Sets/sends the calculated Axisvalues to the Joystick.
-void ResetAxisValue(const Profile & profile,Rpm & rpm,Sensor &sensor,TimeDifference & timedifference); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonged time
-                                                                                            // Since the Axisvalue is calculate only when a falling edge has been detected, the Axisvalu would be stuck
-                                                                                            // on the last calculated value, if no new falling edge has been detected. E.g: abrupt stop of the rotation.
-AxisValue() : throttle(0){};
+static void CopyProfiles(Profile & profile); // Copies the currently selected (count) Profile from the Profiles(Templates) to the referenced profile.
+static void CopyProfiles(Profile & profile,const unsigned short int & count); // Copies the referenced (count) Profile from the Profiles(Templates) to the referenced profile.
+static void CopyProfiles(Profile & profile,const unsigned short int & count,const String & profile_name); // Copies the referenced (count) Profile from the Profiles(Templates) to the referenced profile.
+
 };
 
-    ProfileCurrent.profile_name=Profiles::profile_names[Profiles::count];
-    ProfileCurrent.min_rpm=Profiles::min_rpms[Profiles::count];
-    ProfileCurrent.max_rpm=Profiles::max_rpms[Profiles::count];
-    ProfileCurrent.filter_name=Profiles::filter_names[Profiles::count];
-    ProfileCurrent.sample_size=Profiles::sample_sizes[Profiles::count];
-    Serial.println("Loading Profile: Processing...");
-    Serial.println("---------------------------------------------------");
+ 
 
 
-*/
 
 
 

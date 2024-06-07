@@ -19,7 +19,6 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Classes and Struct Declarations /////////////////////////////////////////////////////////////////
 
 String filter[NUMFILTERS] = {"AVR","MED","MIX"};
-//const Profile ProfileDefault={Profiles::profile_names[0], Profiles::min_rpms[0], Profiles::max_rpms[0],Profiles::filter_names[0],Profiles::sample_sizes[0]};
 Profile ProfileCurrent;
 Sensor Ping(0,0);
 TimeDifference DeltaTime(0,0);
@@ -57,12 +56,8 @@ void setup() {// The setup code is run only once, no Declarations can be perform
 }
 
 // Initialisation of the Current Profile
-//ProfileCurrent = ProfileDefault;
-    ProfileCurrent.profile_name="Current";
-    ProfileCurrent.min_rpm=Profiles::min_rpms[0];
-    ProfileCurrent.max_rpm=Profiles::max_rpms[0];
-    ProfileCurrent.filter_name=Profiles::filter_names[0];
-    ProfileCurrent.sample_size=Profiles::sample_sizes[0];
+
+Copy::CopyProfiles(ProfileCurrent,0,"Current");
 
 
 Profiles::count = Profiles::pn;

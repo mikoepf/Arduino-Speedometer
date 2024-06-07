@@ -410,11 +410,7 @@ rot_dir = 0;
 rot_state[2] = (false,false);
 
 menu_count = 0;
-    ProfileCurrent.profile_name="Current";
-    ProfileCurrent.min_rpm=Profiles::min_rpms[0];
-    ProfileCurrent.max_rpm=Profiles::max_rpms[0];
-    ProfileCurrent.filter_name=Profiles::filter_names[0];
-    ProfileCurrent.sample_size=Profiles::sample_sizes[0];
+Copy::CopyProfiles(ProfileCurrent,0,"Current");
 
 LCDprint(lcd,ProfileCurrent);
 }
@@ -657,13 +653,10 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
   {
 
     consent_load = false;
-    //ProfileCurrent.profile_name=Profiles::profile_names[Profiles::count];
-    ProfileCurrent.min_rpm=Profiles::min_rpms[Profiles::count];
-    ProfileCurrent.max_rpm=Profiles::max_rpms[Profiles::count];
-    ProfileCurrent.filter_name=Profiles::filter_names[Profiles::count];
-    ProfileCurrent.sample_size=Profiles::sample_sizes[Profiles::count];
     Serial.println("Loading Profile: Processing...");
     Serial.println("---------------------------------------------------");
+
+    Copy::CopyProfiles(ProfileCurrent);
 
     rpm.ResetRpm(sensor, timedifference);
     LCDprint(lcd,ProfileCurrent);
@@ -940,15 +933,63 @@ bool UserInput::GetInput(const unsigned short int i)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////Testfunction/////////////////////////////////////////
-/*
-void UserInput::PrintString(String filter[])
+/////////////////////////////////////// Copy Profile 1/////////////////////////////////////////
+void Copy::CopyProfiles(Profile &profile)
 {
-  Serial.println(filter[0]);
+    profile.profile_name=Profiles::profile_names[Profiles::count];
+    profile.min_rpm=Profiles::min_rpms[Profiles::count];
+    profile.max_rpm=Profiles::max_rpms[Profiles::count];
+    profile.filter_name=Profiles::filter_names[Profiles::count];
+    profile.sample_size=Profiles::sample_sizes[Profiles::count];
+
+    Serial.print("Copied Parameters from Profile: ");
+    Serial.print(Profiles::profile_names[Profiles::count]);
+    Serial.print("to Profile:");
+    Serial.print(profile.profile_name);
+    Serial.println("---------------------------------------------------");
+
 }
-*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////// Copy Profile 2/////////////////////////////////////////
+void Copy::CopyProfiles(Profile &profile,const unsigned short int & count)
+{
+    profile.profile_name=Profiles::profile_names[count];
+    profile.min_rpm=Profiles::min_rpms[count];
+    profile.max_rpm=Profiles::max_rpms[count];
+    profile.filter_name=Profiles::filter_names[count];
+    profile.sample_size=Profiles::sample_sizes[count];
+
+    Serial.print("Copied Parameters from Profile: ");
+    Serial.print(Profiles::profile_names[count]);
+    Serial.print("to Profile:");
+    Serial.print(profile.profile_name);
+    Serial.println("---------------------------------------------------");
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////// Copy Profile 3/////////////////////////////////////////
+void Copy::CopyProfiles(Profile &profile,const unsigned short int & count,const String & profile_name)
+{
+    profile.profile_name=profile_name;
+    profile.min_rpm=Profiles::min_rpms[count];
+    profile.max_rpm=Profiles::max_rpms[count];
+    profile.filter_name=Profiles::filter_names[count];
+    profile.sample_size=Profiles::sample_sizes[count];
+
+    Serial.print("Copied Parameters from Profile: ");
+    Serial.print(Profiles::profile_names[count]);
+    Serial.print("to (renamed)Profile:");
+    Serial.print(profile_name);
+    Serial.println("---------------------------------------------------");
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
