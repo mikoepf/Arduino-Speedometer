@@ -1,8 +1,5 @@
-//#include <Keypad.h>         // A library for using matrix style keypads with the Arduino.
-//#include <Joystick.h>       // A library to emulate a Joystick with buttons, switches and axis
-//#include <Wire.h>           // This library allows you to communicate with I2C devices
-//#include <LiquidCrystal_I2C.h>  // This library allows you to communicate with I2C Liquid crystal Display
 #include "SpeedometerClass.h" // This library was created in conjunction with this INO-file and contains all the Classes
+
 
 // Joystick declaration;
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID, 
@@ -21,13 +18,12 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Classes and Struct Declarations /////////////////////////////////////////////////////////////////
 
-//String filter[5] = {"AVR","MED","MIX","BLE","BOO"};
 String filter[NUMFILTERS] = {"AVR","MED","MIX"};
-const Profile ProfileDefault={"STD","MIX", 85, 25, 6};
+//const Profile ProfileDefault={Profiles::profile_names[0], Profiles::min_rpms[0], Profiles::max_rpms[0],Profiles::filter_names[0],Profiles::sample_sizes[0]};
 Profile ProfileCurrent;
 Sensor Ping(0,0);
 TimeDifference DeltaTime(0,0);
-Rpm Revs(ProfileDefault);
+Rpm Revs(ProfileCurrent);
 AxisValue Throttle;
 UserInput Hmi;
 
@@ -61,7 +57,15 @@ void setup() {// The setup code is run only once, no Declarations can be perform
 }
 
 // Initialisation of the Current Profile
-ProfileCurrent = ProfileDefault;
+//ProfileCurrent = ProfileDefault;
+    ProfileCurrent.profile_name="Current";
+    ProfileCurrent.min_rpm=Profiles::min_rpms[0];
+    ProfileCurrent.max_rpm=Profiles::max_rpms[0];
+    ProfileCurrent.filter_name=Profiles::filter_names[0];
+    ProfileCurrent.sample_size=Profiles::sample_sizes[0];
+
+
+Profiles::count = Profiles::pn;
 Hmi.InitRot();
 Hmi.LCDprint(lcd,ProfileCurrent);
 } //  END of Setup  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -94,7 +98,7 @@ Throttle.ResetAxisValue(ProfileCurrent,Revs,Ping,DeltaTime); // Resets the Axisv
 Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the Joystick.
 
 Hmi.NavigateMenu(lcd,ProfileCurrent); //  When the menubutton is pressed, the menu number "menu_count" is iterated.
-Hmi.Reset(lcd,ProfileCurrent,ProfileDefault,Revs,Ping,DeltaTime);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
+Hmi.Reset(lcd,ProfileCurrent,Revs,Ping,DeltaTime);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
 Hmi.ChangeParameter(lcd,ProfileCurrent,filter,Revs,Ping,DeltaTime);  // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
 //Hmi.PrintString(filter);
 

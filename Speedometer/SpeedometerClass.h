@@ -1,10 +1,12 @@
 #pragma once  // should prevent the multiple call of the header.
-//#ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
-//#define SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
-//#include <Keypad.h>         // A library for using matrix style keypads with the Arduino.
+
+#ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
+#define SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
+
+#include <Arduino.h>
 #include <Joystick.h>       // A library to emulate a Joystick with buttons, switches and axis.
-//#include <Wire.h>           // This library allows you to communicate with I2C devices.
 #include <LiquidCrystal_I2C.h>  // This library allows you to communicate with I2C Liquid crystal Display.
+#include "Profiles.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////.
 #define AXISMINIMUM   0       // Minimumvalue of the axis-range.
@@ -32,9 +34,9 @@
 struct Profile
 {
   String profile_name;
-  String filter_name;
-  unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
   unsigned short int min_rpm;// 3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
+  unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
+  String filter_name;
   unsigned short int sample_size;
 };
 
@@ -62,6 +64,7 @@ class TimeDifference  // Determines the time between the last detected falling e
   public:
 unsigned long int previous_time_stamp;  // The time, when the last falling edge was detected, is stored here.
 unsigned long int time_difference;  // The time between the last detected falling edge and the currently detected falling edge is stored here.
+//void CalculateTimediff(const unsigned long int &t_stamp,const Profile & profile,const Rpm & rpm);/*, const Rpm &rpm);*/ // Determines the time between the last detected falling edge and the currently detected falling edge.
 void CalculateTimediff(const unsigned long int &t_stamp,const Profile & profile);/*, const Rpm &rpm);*/ // Determines the time between the last detected falling edge and the currently detected falling edge.
 TimeDifference(): previous_time_stamp(0),time_difference(0){};
 TimeDifference(const unsigned long int p_stamp,const unsigned long int t_diff): previous_time_stamp(p_stamp),time_difference(t_diff) {};
@@ -161,7 +164,7 @@ unsigned short int CheckRotaries(); // Reads the state of the given rotary (numb
 void ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,String filter[],Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // When the rotary encoder is rotaded, 
                                                                                                       //the parameter in the currently active menu are altered respectively.
 void InitRot(); // Synchronizes the rotary encoder states at the begin of the programm.
-void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,const Profile &ProfileDefault,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // Resets the Microcontroller
+void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // Resets the Microcontroller
 void NavigateMenu(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Iterates the menus if the rotary encoder button is pressed.
 const void LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Prints the parameter & settings on the LCD Display
 //void PrintString(String filter[]);
@@ -191,13 +194,33 @@ delete[] pin_state;
 
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+class LoadProfile
+{
+  private:
+double throttle;  // The Axisvalue of the Joystick is stored here. It is called "Throttle" since the Joistick-Axis is defined as throttle-axis
+  public:
+void CalculateAxisValue(const Profile & profile, const Rpm & rpm, Sensor &sensor); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
+void SetAxisValue(Joystick_ &Joystick ); // Sets/sends the calculated Axisvalues to the Joystick.
+void ResetAxisValue(const Profile & profile,Rpm & rpm,Sensor &sensor,TimeDifference & timedifference); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonged time
+                                                                                            // Since the Axisvalue is calculate only when a falling edge has been detected, the Axisvalu would be stuck
+                                                                                            // on the last calculated value, if no new falling edge has been detected. E.g: abrupt stop of the rotation.
+AxisValue() : throttle(0){};
+};
+
+    ProfileCurrent.profile_name=Profiles::profile_names[Profiles::count];
+    ProfileCurrent.min_rpm=Profiles::min_rpms[Profiles::count];
+    ProfileCurrent.max_rpm=Profiles::max_rpms[Profiles::count];
+    ProfileCurrent.filter_name=Profiles::filter_names[Profiles::count];
+    ProfileCurrent.sample_size=Profiles::sample_sizes[Profiles::count];
+    Serial.println("Loading Profile: Processing...");
+    Serial.println("---------------------------------------------------");
 
 
-
-
+*/
 
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//#endif
+#endif

@@ -1,8 +1,3 @@
-#include "WString.h"
-#include "LiquidCrystal_I2C.h"
-#ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
-#define SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
-
 #include "SpeedometerClass.h" // This library was created in conjunction with this INO-file and contains all the Classes
 
 
@@ -30,6 +25,7 @@ signal_order = digitalRead(TACHO); // 0 if contact, else 1
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////// Determines the time between the last detected falling edge and the currently detected falling edge ///
+//void TimeDifference::CalculateTimediff(const unsigned long int &t_stamp,const Profile & profile,const Rpm & rpm)/*, const Rpm &rpm)*/ 
 void TimeDifference::CalculateTimediff(const unsigned long int &t_stamp,const Profile & profile)/*, const Rpm &rpm)*/ 
 {
   
@@ -381,6 +377,7 @@ if(GetInput(ROTBUT))
   }
   else
   {
+    Profiles::count = Profiles::pn;
     menu_count = static_cast<int>(UserInput::STARTMENU);
   }
   LCDprint(lcd,ProfileCurrent);
@@ -391,7 +388,7 @@ if(GetInput(ROTBUT))
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////This method resets the microcontroller to its default state //////////////////////////////
-void UserInput:: Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,const Profile &ProfileDefault,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference) 
+void UserInput:: Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference) 
 // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0,
 // or their default values and all respective buffers and variables are cleared/zeroized.
 {
@@ -411,8 +408,13 @@ rot_pin1 = ROTMENU1;
 rot_pin2 = ROTMENU2;
 rot_dir = 0;
 rot_state[2] = (false,false);
+
 menu_count = 0;
-ProfileCurrent=ProfileDefault;
+    ProfileCurrent.profile_name="Current";
+    ProfileCurrent.min_rpm=Profiles::min_rpms[0];
+    ProfileCurrent.max_rpm=Profiles::max_rpms[0];
+    ProfileCurrent.filter_name=Profiles::filter_names[0];
+    ProfileCurrent.sample_size=Profiles::sample_sizes[0];
 
 LCDprint(lcd,ProfileCurrent);
 }
@@ -428,9 +430,11 @@ const void UserInput::LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent )
   {
     case STARTMENU:
 { 
+  if(Profiles::count == Profiles::pn)
+  {
   lcd.print("Prof:"); 
   lcd.setCursor (6,0);
-  lcd.print("_TODO_");  //  TODO lcd.print(ProfileCurrent.profile_name);
+  lcd.print(ProfileCurrent.profile_name);  //  TODO lcd.print(ProfileCurrent.profile_name);
   lcd.setCursor (0,1);
   lcd.print(ProfileCurrent.min_rpm);  //  TODO
   lcd.setCursor (4,1);
@@ -439,19 +443,49 @@ const void UserInput::LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent )
   lcd.print(ProfileCurrent.filter_name);
   lcd.setCursor (13,1);
   lcd.print(ProfileCurrent.sample_size);
+  }
+  else
+  {
+  lcd.print("Prof:"); 
+  lcd.setCursor (6,0);
+  lcd.print(Profiles::profile_names[Profiles::count]);  //  TODO lcd.print(ProfileCurrent.profile_name);
+  lcd.setCursor (0,1);
+  lcd.print(Profiles::min_rpms[Profiles::count]);  //  TODO
+  lcd.setCursor (4,1);
+  lcd.print(Profiles::max_rpms[Profiles::count]);  //  TODO
+  lcd.setCursor (8,1);
+  lcd.print(Profiles::filter_names[Profiles::count]);
+  lcd.setCursor (13,1);
+  lcd.print(Profiles::sample_sizes[Profiles::count]);
+  }
 }         
    break;
        case PROFILE_LOAD:
 { 
-  lcd.print("Load?:"); 
+  if(Profiles::count == Profiles::pn)
+  {
+  lcd.print("Set:"); 
   lcd.setCursor (6,0);
-  lcd.print("_TODO_");  //  TODO lcd.print(ProfileCurrent.profile_name);
+  lcd.print(ProfileCurrent.profile_name);  //  TODO lcd.print(ProfileCurrent.profile_name);
   lcd.setCursor (0,1);
   lcd.print(ProfileCurrent.min_rpm);  //  TODO
   lcd.setCursor (4,1);
   lcd.print(ProfileCurrent.max_rpm);  //  TODO
   lcd.setCursor (8,1);
   lcd.print(ProfileCurrent.filter_name);
+  lcd.setCursor (13,1);
+  lcd.print(ProfileCurrent.sample_size);
+  }
+  else {
+  lcd.print("Load?:"); 
+  lcd.setCursor (6,0);
+  lcd.print(Profiles::profile_names[Profiles::count]);  //  TODO lcd.print(ProfileCurrent.profile_name);
+  lcd.setCursor (0,1);
+  lcd.print(Profiles::min_rpms[Profiles::count]);  //  TODO
+  lcd.setCursor (4,1);
+  lcd.print(Profiles::max_rpms[Profiles::count]);  //  TODO
+  lcd.setCursor (8,1);
+  lcd.print(Profiles::filter_names[Profiles::count]);
   lcd.setCursor (11,1);
   if(consent_load)
   {
@@ -460,6 +494,7 @@ const void UserInput::LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent )
   else
   {
     lcd.print("( NO)");
+  }
   }
 }
    break;
@@ -561,24 +596,43 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
     Serial.println(consent_save);
     Serial.println("---------------------------------------------------");
   }
-
+    //Profiles::count=0;
   if (result == DIR_CCW)
   { 
-  Serial.println("PLACEHOLDER Profile decrease: TODO");
-  Serial.println("---------------------------------------------------");
-  LCDprint(lcd,ProfileCurrent);
+    if(Profiles::count == 0 )
+    {
+    Profiles::count = Profiles::pn-1;
+    }
+    else
+    {
+    --Profiles::count;
+    }
+    Serial.print("Profile count decrease:");
+    Serial.println(Profiles::count);
+    Serial.println("---------------------------------------------------");
+    LCDprint(lcd,ProfileCurrent);
   }
   else if(result == DIR_CW)
   {
-  Serial.println("PLACEHOLDER Profile increase: TODO");
+    if(Profiles::count >= Profiles::pn )
+    {
+    Profiles::count = 0;
+    }
+    else
+    {
+    ++Profiles::count;
+    }
+  Serial.print("Profile count decrease:");
+  Serial.println(Profiles::count);
   Serial.println("---------------------------------------------------");
   LCDprint(lcd,ProfileCurrent);
   }
-}
+  
+  }
    break;
        case PROFILE_LOAD:
 { 
-  if (result == DIR_CCW)
+  if (result == DIR_CCW && Profiles::count != Profiles::pn)
   { 
   consent_load = false;
   Serial.print("consent_load = ");
@@ -586,7 +640,7 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
   Serial.println("---------------------------------------------------");
   LCDprint(lcd,ProfileCurrent);
   }
-  else if(result == DIR_CW)
+  else if(result == DIR_CW && Profiles::count != Profiles::pn)
   {
     consent_load = true;
   Serial.print("consent_load = ");
@@ -601,11 +655,18 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
 { 
     if (consent_load)
   {
+
     consent_load = false;
-    Serial.println("PLACEHOLDER Loading Profile: TODO");
-    Serial.print("consent_load set to: ");
-    Serial.println(consent_load);
+    //ProfileCurrent.profile_name=Profiles::profile_names[Profiles::count];
+    ProfileCurrent.min_rpm=Profiles::min_rpms[Profiles::count];
+    ProfileCurrent.max_rpm=Profiles::max_rpms[Profiles::count];
+    ProfileCurrent.filter_name=Profiles::filter_names[Profiles::count];
+    ProfileCurrent.sample_size=Profiles::sample_sizes[Profiles::count];
+    Serial.println("Loading Profile: Processing...");
     Serial.println("---------------------------------------------------");
+
+    rpm.ResetRpm(sensor, timedifference);
+    LCDprint(lcd,ProfileCurrent);
   }
 
   if (result == DIR_CCW)
@@ -679,22 +740,11 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
 { 
   if (result == DIR_CCW)
   { 
-  Serial.println("PLACEHOLDER Filter decrease: PROCESSING");
-  Serial.println("---------------------------------------------------");
-
- // ProfileCurrent.filter_name = filter[1];
-  //rpm.ResetRpm(sensor,timedifference);
  int i = 0;
-    Serial.println("i before do loop: ");
-    Serial.println(i);
- // for(;ProfileCurrent.filter_name == filter[i];++i);
  if(ProfileCurrent.filter_name != filter[i])
  {
  do{++i;Serial.println(i);}while(ProfileCurrent.filter_name != filter[i] && i < NUMFILTERS-1);
  }
- Serial.print("i after do loop: ");
- Serial.println(i);
-
   if( i == 0)
   {
     ProfileCurrent.filter_name = filter[NUMFILTERS-1];
@@ -717,14 +767,6 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
     Serial.println("]");
   }  
 
-
- 
-/*
-  Serial.print("sizeof(filter) =>");
-  Serial.println(sizeof(filter));
-  Serial.print("sizeof(filter[1]) =>");
-  Serial.println(sizeof(filter[0]));
-  */
   Serial.println("---------------------------------------------------");
 
 
@@ -733,17 +775,11 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
   }
   else if(result == DIR_CW)
   {
-      Serial.println("PLACEHOLDER Filter increase: PROCESSING");
-  Serial.println("---------------------------------------------------");
 int i = 0;
-    Serial.println("i before do loop: ");
-    Serial.println(i);
   if(ProfileCurrent.filter_name != filter[i])
  {
  do{++i;Serial.println(i);}while(ProfileCurrent.filter_name != filter[i] && i < NUMFILTERS-1);
  }
-     Serial.print("i after do loop: ");
-    Serial.println(i);
   if( i == NUMFILTERS-1)
   {
     ProfileCurrent.filter_name = filter[0];
@@ -765,13 +801,6 @@ int i = 0;
     Serial.print(i+1);
     Serial.println("]");
   }
-
-/*
-  Serial.print("sizeof(filter) =>");
-  Serial.println(sizeof(filter));
-  Serial.print("sizeof(filter[1]) =>");
-  Serial.println(sizeof(filter[0]));
-  */
   Serial.println("---------------------------------------------------");
 
   LCDprint(lcd,ProfileCurrent);
@@ -1175,4 +1204,3 @@ void UserInput::PrintString(String filter[])
 
 
 
-#endif
