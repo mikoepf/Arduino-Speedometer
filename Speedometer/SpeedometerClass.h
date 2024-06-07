@@ -1,10 +1,10 @@
-#include "WString.h"
 #pragma once  // should prevent the multiple call of the header.
 
 #ifndef SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
 #define SPEEDOMETERCLASS_H // should prevent the multiple call of the header.
 
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <Joystick.h>       // A library to emulate a Joystick with buttons, switches and axis.
 #include <LiquidCrystal_I2C.h>  // This library allows you to communicate with I2C Liquid crystal Display.
 #include "Profiles.h"
@@ -194,9 +194,12 @@ class Copy
   private:
 
   public:
+static int eeAddress;
 static void CopyProfiles(Profile & profile); // Copies the currently selected (count) Profile from the Profiles(Templates) to the referenced profile.
 static void CopyProfiles(Profile & profile,const unsigned short int & count); // Copies the referenced (count) Profile from the Profiles(Templates) to the referenced profile.
 static void CopyProfiles(Profile & profile,const unsigned short int & count,const String & profile_name); // Copies the referenced (count) Profile from the Profiles(Templates) to the referenced profile.
+static void CopyToEEPROM(Profile & profile); // Copies the Profile Stored in EEPROM to the referenced profile.
+static bool LoadFromEEPROM(Profile & profile); // Loads the referenced profile to the EEPROM.
 
 };
 

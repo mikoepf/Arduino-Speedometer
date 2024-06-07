@@ -9,10 +9,7 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
 // LCD declaration and parameter definitions
 LiquidCrystal_I2C lcd(0x27, 16, 2);   
 
-// Testvariables declaration
-
-
-
+// Variables declaration
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -57,8 +54,10 @@ void setup() {// The setup code is run only once, no Declarations can be perform
 
 // Initialisation of the Current Profile
 
+if(!Copy::LoadFromEEPROM(ProfileCurrent))
+{
 Copy::CopyProfiles(ProfileCurrent,0,"Current");
-
+}
 
 Profiles::count = Profiles::pn;
 Hmi.InitRot();

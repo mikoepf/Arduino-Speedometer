@@ -410,6 +410,7 @@ rot_dir = 0;
 rot_state[2] = (false,false);
 
 menu_count = 0;
+Profiles::count=Profiles::pn;
 Copy::CopyProfiles(ProfileCurrent,0,"Current");
 
 LCDprint(lcd,ProfileCurrent);
@@ -548,7 +549,7 @@ const void UserInput::LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent )
    break;
        case PROFILE_SAVE:
 { 
-  lcd.print("Save USER?:"); 
+  lcd.print("Save Current?:"); 
   lcd.setCursor (11,0);
   if(consent_save)
   {
@@ -587,9 +588,8 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
       if (consent_save)
   {
     consent_save = false;
-    Serial.println("PLACEHOLDER Saving Profile: TODO");
-    Serial.print("consent_save set to: ");
-    Serial.println(consent_save);
+    Copy::CopyToEEPROM(ProfileCurrent);
+    Serial.println("Saved to EEPROM");
     Serial.println("---------------------------------------------------");
   }
     //Profiles::count=0;
@@ -597,7 +597,7 @@ void UserInput::ChangeParameter(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,S
   { 
     if(Profiles::count == 0 )
     {
-    Profiles::count = Profiles::pn-1;
+    Profiles::count = Profiles::pn;
     }
     else
     {
@@ -932,11 +932,10 @@ bool UserInput::GetInput(const unsigned short int i)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+int Copy::eeAddress=0;
 /////////////////////////////////////// Copy Profile 1/////////////////////////////////////////
 void Copy::CopyProfiles(Profile &profile)
 {
-    profile.profile_name=Profiles::profile_names[Profiles::count];
     profile.min_rpm=Profiles::min_rpms[Profiles::count];
     profile.max_rpm=Profiles::max_rpms[Profiles::count];
     profile.filter_name=Profiles::filter_names[Profiles::count];
@@ -955,7 +954,6 @@ void Copy::CopyProfiles(Profile &profile)
 /////////////////////////////////////// Copy Profile 2/////////////////////////////////////////
 void Copy::CopyProfiles(Profile &profile,const unsigned short int & count)
 {
-    profile.profile_name=Profiles::profile_names[count];
     profile.min_rpm=Profiles::min_rpms[count];
     profile.max_rpm=Profiles::max_rpms[count];
     profile.filter_name=Profiles::filter_names[count];
@@ -989,18 +987,108 @@ void Copy::CopyProfiles(Profile &profile,const unsigned short int & count,const 
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Copy::CopyToEEPROM(Profile & profile) // Copies the Profile Stored in EEPROM to the referenced profile.
+{
 
 
+
+struct EEProfile
+{
+  char profile_name[12];
+  unsigned short int min_rpm;// 3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
+  unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
+  char filter_name[4];
+  unsigned short int sample_size;
+} EEPROF;
+
+profile.profile_name.toCharArray(EEPROF.profile_name, profile.profile_name.length()+1);
+EEPROF.min_rpm=profile.min_rpm;
+EEPROF.max_rpm=profile.max_rpm;
+profile.filter_name.toCharArray(EEPROF.filter_name, profile.filter_name.length()+1);
+EEPROF.sample_size=profile.sample_size;
+
+EEPROM.put(eeAddress, EEPROF);
+
+Serial.println("Loaded to EEPROM");
+
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool Copy::LoadFromEEPROM(Profile & profile) // Loads the referenced profile to the EEPROM.
+{
+struct EEProfile
+{
+  char profile_name[12];
+  unsigned short int min_rpm;// 3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
+  unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
+  char filter_name[4];
+  unsigned short int sample_size;
+} EEPROF;
+
+  if(int i = EEPROM.read(eeAddress) == 255)
+  {
+    Serial.println("Could not load from EEPROM");
+    return false;
+  }
+  else
+  {
+    EEPROM.get( eeAddress, EEPROF );
+    
+    profile.profile_name = String(EEPROF.profile_name);
+    profile.min_rpm=EEPROF.min_rpm;
+    profile.max_rpm=EEPROF.max_rpm;
+    profile.filter_name=String(EEPROF.filter_name);
+    profile.sample_size=EEPROF.sample_size;
+
+    Serial.println("Loaded from EEPROM");
+    return true;
+  }
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool Copy::LoadFromEEPROM(Profile & profile) // Loads the referenced profile to the EEPROM.
+{
+struct EEProfile
+{
+  char profile_name[12];
+  unsigned short int min_rpm;// 3000/max_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (47)
+  unsigned short int max_rpm;// 3000/min_time_difference; // 3000 => (60sec * 1000ms) / 20magnets "sensors/pings per revolution"  (85)
+  char filter_name[4];
+  unsigned short int sample_size;
+} EEPROF;
 
 
+char[] chArray = "some characters";
+String String(chArray);
+
+
+  if(int i = EEPROM.read(eeAddress) == 255)
+  {
+    Serial.println("Could not load from EEPROM");
+    return false;
+  }
+  else
+  {
+    EEPROM.get( eeAddress, profile );
+    Serial.println("Loaded from EEPROM");
+    return true;
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Copy::CopyToEEPROM(Profile & profile) // Copies the Profile Stored in EEPROM to the referenced profile.
+{
 
-
+EEPROM.put(eeAddress, profile);
+profile.profile_name.toCharArray(char *buf, unsigned int bufsize)
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

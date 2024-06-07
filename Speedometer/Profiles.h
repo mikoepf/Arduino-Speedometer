@@ -1,4 +1,3 @@
-//#include "WString.h"
 #pragma once  // should prevent the multiple call of the header.
 
 #ifndef PROFILES_H
