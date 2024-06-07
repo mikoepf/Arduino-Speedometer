@@ -252,12 +252,12 @@ void MainWindow::WriteFile()
         {
            ++size;
         }
-        stream << "unsigned short int Profiles::pn = " + QString::number(size) + ";"<< Qt::endl;
+        stream << "const unsigned short int Profiles::pn = " + QString::number(size) + ";"<< Qt::endl;
         queryprofile.first();
         queryprofile.previous();
 ///////////////////////////////////////////////
         size_t i = 0;
-        stream << "String Profiles::profile_names [" + QString::number(size) + "] = {";
+        stream << "const String Profiles::profile_names [" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
             //QString visibleprof = queryprofile.value(1).toString();
@@ -274,7 +274,7 @@ void MainWindow::WriteFile()
         queryprofile.first();
         queryprofile.previous();
 ///////////////////////////////////////////////
-        stream << "unsigned short int Profiles::min_rpms[" + QString::number(size) + "] = {";
+        stream << "const unsigned short int Profiles::min_rpms[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
             stream << queryprofile.value(2).toString();
@@ -290,7 +290,7 @@ void MainWindow::WriteFile()
         queryprofile.first();
         queryprofile.previous();
 //////////////////////////////////////////////
-        stream << "unsigned short int Profiles::max_rpms[" + QString::number(size) + "] = {";
+        stream << "const unsigned short int Profiles::max_rpms[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
             stream <<  queryprofile.value(3).toString();
@@ -306,7 +306,7 @@ void MainWindow::WriteFile()
         queryprofile.first();
         queryprofile.previous();
 //////////////////////////////////////////////
-        stream << "unsigned short int Profiles::sample_sizes[" + QString::number(size) + "] = {";
+        stream << "const unsigned short int Profiles::sample_sizes[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
             //QString visibleprof = queryprofile.value(1).toString();
@@ -323,7 +323,7 @@ void MainWindow::WriteFile()
         queryprofile.first();
         queryprofile.previous();
 /////////////////////////////////////////////
-        stream << "String Profiles::filter_names[" + QString::number(size) + "] = {";
+        stream << "const String Profiles::filter_names[" + QString::number(size) + "] = {";
         while (queryprofile.next())
         {
             QSqlQuery queryfilter("select * from Filters where FID = '" + queryprofile.value(5).toString() + "'");
@@ -337,6 +337,11 @@ void MainWindow::WriteFile()
             }
             ++i;
         }
+
+////////////////////////////////////////////
+
+               stream << "unsigned short int Profiles::count=0;" << Qt::endl;
+
 ////////////////////////////////////////////
         QMessageBox msg;
         msg.setText("*Profiles.cpp* has been created and written!");
