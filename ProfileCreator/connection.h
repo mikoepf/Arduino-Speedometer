@@ -9,24 +9,24 @@
 #include <QTextStream>
 
 
-static bool createconnection()
+static bool createconnection()  // Creates a database
 {
-    // Ausgabe der Typen von Datenbanken
-    qDebug() << QSqlDatabase::drivers();    // Liefert eine Liste von Treibern
-    // Anlegen eines Datenbankobjektes
-    QString dbName = "Profiles.db";   //
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("Profiles.db");
-    if( QFile::exists(dbName))
+    // Output of database types
+    qDebug() << QSqlDatabase::drivers();    // Returns a list of drivers
+    // Creating a database object
+    QString dbName = "Profiles.db";   // Assignes a name for the database
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE"); //  Adds/instatiates a SQLdatabase
+    db.setDatabaseName("Profiles.db");  // Assignes a name for the database
+    if( QFile::exists(dbName)) // Checks wheher a dadabase with the assigned name already exists
     {
-        QMessageBox msg;
+        QMessageBox msg;    // Plotts a message, that a database with the assigned name already exists
         msg.setText("Database *Profiles.db* has been loaded!");
         msg.setWindowTitle("Info");
         msg.addButton("Ok",QMessageBox::YesRole);
         msg.exec();
-    if(!db.open())
+    if(!db.open())  // Checks whether a connection with the existing database could be established
         {
-            QMessageBox msg;
+            QMessageBox msg;    // Plotts a message, that the connection with the existing database could not been established
             msg.setText("Unable to connect to *Profiles.db* !");
             msg.setWindowTitle("Error");
             msg.addButton("OK", QMessageBox::YesRole);
@@ -36,34 +36,34 @@ static bool createconnection()
     }
     else
     {
-    db.setDatabaseName("Profiles.db");
-    if(!db.open())
+    db.setDatabaseName("Profiles.db");  // Assignes a name for the database to be created
+    if(!db.open())  // Checks whether a connection with the existing database could be established
     {
-        QMessageBox msg;
+        QMessageBox msg;    // Plotts a message, that the connection with the newly created database could not been established
         msg.setText("Unable to open the database");
         msg.setWindowTitle("Error");
         msg.addButton("OK", QMessageBox::YesRole);
         msg.exec();
         return false;
     }
-    QMessageBox msg;
+    QMessageBox msg;    // Plotts a message, that the newly created database is being set up
     msg.setText("Setting up new Database *Profiles.db*");
     msg.setWindowTitle("Info");
     msg.addButton("Ok",QMessageBox::YesRole);
     msg.exec();
 
-    // Tabellen anlegen
+    // Craetes tables in the newly created database
     QSqlQuery query;
     query.exec("drop table Profiles");
     query.exec("drop table Filters");
 
-    // Filter-Tabelle
+    // Craetes a Filter table in the newly created database
     qDebug() << query.exec("create table if not exists 'Filters' (\
                            'FID' integer not null unique, \
                            'FName' text not null unique,\
                            primary key ('FID' autoincrement)) \
                 ");
-                // Profiles-Tabelle
+                // Craetes a Profiles table in the newly created database
                 qDebug() << query.exec("create table if not exists 'Profiles' (\
                            'PID' integer not null unique, \
                            'PName' text not null, \
@@ -74,6 +74,7 @@ static bool createconnection()
                            primary key ('PID' autoincrement) \
                            foreign key ('FilterFK') references 'Filters' ('FID'))\
                 ");
+    // Craetes a Storage table in the newly created database. This table is used to store permanent parameters e.g: path to the created file
     qDebug() << query.exec("create table if not exists 'Storage' (\
                            'SID' integer not null unique, \
                            'Data' text not null, \
@@ -87,24 +88,6 @@ static bool createconnection()
     query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Default','30','80','6', 1)");
     query.exec("insert into Storage (Data) values ('../')");
 
-/*
-                // Testdaten    => solange man entwickelt
-                // wenn das Programm fertig ist, kann dieser Abschnitt gelöscht werden
-    query.exec("delete from Profiles");
-    query.exec("delete from Filters");
-    query.exec("insert into Filters (FName) values ('AVR')");
-    query.exec("insert into Filters (FName) values ('MED')");
-    query.exec("delete from Filters where FName = 'MED'");
-    query.exec("insert into Filters (FName) values ('MED')");
-    query.exec("insert into Filters (FName) values ('MIX')");
-
-    query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Default','30','80','6', 1)");
-    query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Dirt_Fast','45','90','6', 3)");
-    query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Dirt_Slow','15','80','10', 3)");
-    query.exec("delete from Profiles where PName = 'Dirt_Slow'");
-    query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Assetto F1','30','85','4', 1)");
-    query.exec("insert into Profiles (PName,MINrpm,MAXrpm,SNumber,FilterFK) values ('Dirt_Slow','15','80','10', 4)");
-*/
     return true;
     }
     return true;
