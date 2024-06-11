@@ -9,19 +9,18 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
 // LCD declaration and parameter definitions
 LiquidCrystal_I2C lcd(0x27, 16, 2);   
 
-// Variables declaration
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Classes and Struct Declarations /////////////////////////////////////////////////////////////////
 
-String filter[NUMFILTERS] = {"AVR","MED","MIX"};
-Profile ProfileCurrent;
-Sensor Ping(0,0);
-TimeDifference DeltaTime(0,0);
-Rpm Revs(ProfileCurrent);
-AxisValue Throttle;
-UserInput Hmi;
+String filter[NUMFILTERS] = {"AVR","MED","MIX"};  // Definition of the Filters / Filter names
+Profile ProfileCurrent; //  Declaration of the parameter object (struct) which will store the currently utilized parameter values
+Sensor Ping(0,0); // Declaration and instantiation with 0-values of a sensor object which method detects a falling edge of the sensor signal
+TimeDifference DeltaTime(0,0);  // Declaration and instantiation with 0-values of an TimeDifference object, which methods are used to determin the time between the last detected falling edge and the currently detected falling edge.
+Rpm Revs(ProfileCurrent); //  Declaration and instantiation with parameter-values of an Rpm object, which methods are used to apply a filter to the recorded timedifferences and to determine the revolutions per minute (rotational velocity)
+AxisValue Throttle; // Declaration of an Throttle object, which method is used to calculate the axis value and send it to the computer via USB
+UserInput Hmi;  // Declaration of an Hmi object, which methods are used to register the interface inputs and to print the menu and parameter values on the LCD
 
 //  END of Declarations  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -54,39 +53,40 @@ void setup() {// The setup code is run only once, no Declarations can be perform
 
 // Initialisation of the Current Profile
 
-if(!Copy::LoadFromEEPROM(ProfileCurrent))
-{
+if(!Copy::LoadFromEEPROM(ProfileCurrent)) // If the EEPROM returns a value != 255 => the memory is not empty and the stored paramenter-values are copied to the current profile object
+{// othervise the parameter of the default profile are copied to the currend profile.
 Copy::CopyProfiles(ProfileCurrent,0,"Current");
 }
-
-Profiles::count = Profiles::pn;
-Hmi.InitRot();
-Hmi.LCDprint(lcd,ProfileCurrent);
+// Setting the current profile as the currently active profile (shown on the LCD-Display)
+Profiles::count = Profiles::pn; // The current profile is always on the last position of the profile list "Profiles::count"
+Hmi.InitRot();  //  Checks the current state of rotary encoder signal befor the Loop beginn. (not really required)
+Hmi.LCDprint(lcd,ProfileCurrent); // Prints the current profile parameters on the LCD
 } //  END of Setup  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 void loop() { // put your main code here, to run repeatedly:
 
-unsigned long get_time =Ping.GetTime(); // Sometimes the if() statement does not receive the return-value?????????????
+unsigned long get_time = Ping.GetTime(); // Variable to store the timestamp returned by "Ping.GetTime()" when the a falling edge is detected, othervise a "0" is stored.
 if(get_time)  // Sometimes the if() statement does not receive the return-value? Othervise would do: if(Ping.GetTime())
-{
+{ // When a falling edge is detected, a sequence is initiated.
 
-DeltaTime.CalculateTimediff(Ping.time_stamp,ProfileCurrent);  // ,Revs
-
+DeltaTime.CalculateTimediff(Ping.time_stamp,ProfileCurrent);  // Calculates the time between the last detected falling edge and the currently detected falling edge.
 
 if(DeltaTime.time_difference) // Since with only the first signal the timedifference and the subsequent values can´t be calculated,
-                              // the subsequent will be calculated only after the second signal was received.
-{
-Revs.FillBuffer(DeltaTime.time_difference,ProfileCurrent);
-//Revs.MedianAverageFilter(DeltaTime.time_difference,ProfileCurrent);
-Revs.ApplyFilter(DeltaTime.time_difference, filter, ProfileCurrent);
-Revs.CalculateRpm();
-Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
+                              // the time difference will be calculated only after the second signal was received.
+{// When a timedifference has been calculated, a second sequence is initiated.
 
-}
-//Serial.println(filter[1]);
+Revs.FillBuffer(DeltaTime.time_difference,ProfileCurrent);  // The timedifferences are stored in a buffer.
+
+Revs.ApplyFilter(DeltaTime.time_difference, filter, ProfileCurrent);  // According to the selected filter-parameter in the profile, the corresponding filter is applied to the previously filled buffer.
+
+Revs.CalculateRpm();  // The rotational velocity is calculated with the filtered timedifferences.
+
+Throttle.CalculateAxisValue(ProfileCurrent, Revs, Ping); // Transforms the measured timedifferenzes between signal-falling edges to Axisvalues.
+} // END of the second sequence
 Serial.println("---------------------------------------------- ");
-}
-Ping.SetSignalOrder();
+} // END of the first sequence
+
+Ping.SetSignalOrder();  // Stores the previously received signal value for the later comparison in the falling edge detection method. (used in "Ping.GetTime()")
 
 Throttle.ResetAxisValue(ProfileCurrent,Revs,Ping,DeltaTime); // Resets the Axisvalue to zero if no falling edge has been detected for a prolonget time
 Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the Joystick.
@@ -94,7 +94,7 @@ Throttle.SetAxisValue(Joystick); // Sets/sends the calculated Axisvalues to the 
 Hmi.NavigateMenu(lcd,ProfileCurrent); //  When the menubutton is pressed, the menu number "menu_count" is iterated.
 Hmi.Reset(lcd,ProfileCurrent,Revs,Ping,DeltaTime);  // When the menubutton is pressed, all outputs rpm, Axisvalue, LCD-Display are reset to 0, or their default values and all respective buffers and variables are cleared/zeroized.
 Hmi.ChangeParameter(lcd,ProfileCurrent,filter,Revs,Ping,DeltaTime);  // When the rotary encoder is rotaded, the parameter in the currently active menu are altered respectively.
-//Hmi.PrintString(filter);
+
 
 
 

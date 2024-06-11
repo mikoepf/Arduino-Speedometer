@@ -5,7 +5,8 @@
 
 #include <Arduino.h>
 
-
+// Declares a struct with parameter arrays in which the parameters for each profile will be stored.
+// The Parameters are defined in the "Profiles.cpp". This file will be created using the ProfileCreator app.
 struct Profiles
 {
   

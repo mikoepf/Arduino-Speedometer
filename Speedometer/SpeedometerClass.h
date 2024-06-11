@@ -31,7 +31,7 @@
 #define SAMPLEMAX     20      // The highest sample threshold: Maximal so many samples can be stored in the buffer
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//  Stores the currently utilized parameter values
 struct Profile
 {
   String profile_name;
@@ -42,7 +42,7 @@ struct Profile
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//  A class, which methods detect a falling edge of the sensor signal
 class Sensor
 {
   private:
@@ -50,15 +50,15 @@ bool signal_order;
   public:
 unsigned long int time_stamp; // The time when the falling edge (the current signal is low/0 and the last measurement was high/1).
                               // was detected, is stored here.
-unsigned long int GetTime();  // Detects the falling edge and stores the time when ist was detected int the "time_stamp".
+unsigned long int GetTime();  // Detects the falling edge and stores the time when it was detected int the "time_stamp".
 void SetSignalOrder();  // Stores the current signal value for later comparison in the next iteration.
 Sensor() : signal_order(0), time_stamp (0) {};
 Sensor(const unsigned long int t_stamp,const bool s_order): time_stamp(t_stamp),signal_order(s_order) {};
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class TimeDifference  // Determines the time between the last detected falling edge and the currently detected falling edge.
+// Determines the time between the last detected falling edge and the currently detected falling edge.
+class TimeDifference  
 {
   private:
 
@@ -72,6 +72,7 @@ TimeDifference(const unsigned long int p_stamp,const unsigned long int t_diff): 
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// A class, which methods are used to apply a filter to the recorded timedifferences and to determine the revolutions per minute (rotational velocity)
 class Rpm
 {
   private:
@@ -96,7 +97,7 @@ void MedianAverageFilter(const unsigned long int &time_difference,Profile &Profi
                                                               // by combining the medianfilter and averagefilter to the buffer.
 void ResetRpm(Sensor & sensor,TimeDifference & timedifference);  // This method resets the rpm to 0 and clears/zeroizes all the respective buffers and variables.
 
-Rpm(const Profile & other)
+Rpm(const Profile & other)  // Constructor: Initialices the argument values according to the reference profile
 {
 
 sample_count = median_sample_count=0;
@@ -112,8 +113,8 @@ for(int i = 0;i<SAMPLEMAX;++i)
   median_sample_buffer[i] = 0;
 }
 };
-
-~Rpm()
+//   The idea was to destroy the class object and instatiate a new one with new parameters during the reset... => not possible for now.
+~Rpm()  // Destructor: was meant to free the dynamic arrays. Since the Arduino does not allow to exit the main loop during the execution and subsequently initialice new instances, this destructor is never used. => maybe a solution can be found later...
 {
   delete[] sample_buffer;
   delete[] median_sample_buffer;
@@ -122,6 +123,7 @@ for(int i = 0;i<SAMPLEMAX;++i)
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  A class, which methods are used to calculate the axis value and send it to the computer via USB
 class AxisValue
 {
   private:
@@ -137,12 +139,13 @@ AxisValue() : throttle(0){};
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// A class, which methods are used to register the interface inputs and to print the menu and parameter values on the LCD
 class UserInput
 {
   private:
 bool consent_load;  // For query whether the selected Profile should be loaded => true = YES, false = NO
 bool consent_save;  // For query whether the current Profile should be saved => true = YES, false = NO
-bool* pin_state;
+bool* pin_state;  // Array to store the pin states (not utilized)
 unsigned long int rot_delay;  // Saves the timestamp for rotary encoder delay
 unsigned long int button_delay; // Saves the timestamp for button delay
 unsigned short int rot_pin1;  // Stores the pin adress of the rotary encoder (has two pins) 
@@ -161,11 +164,10 @@ void InitRot(); // Synchronizes the rotary encoder states at the begin of the pr
 void Reset(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent,Rpm & rpm,Sensor & sensor,TimeDifference & timedifference); // Resets the Microcontroller
 void NavigateMenu(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Iterates the menus if the rotary encoder button is pressed.
 const void LCDprint(LiquidCrystal_I2C &lcd,Profile &ProfileCurrent);  // Prints the parameter & settings on the LCD Display
-//void PrintString(String filter[]);
 
-UserInput()
-{
-pin_state = new bool [PINS];
+UserInput() // Constructor with parameter initialization
+{ 
+pin_state = new bool [PINS];  // not utilized
 for(int i = 0;i<PINS;++i)
 {
   pin_state[i] = 0;
@@ -180,15 +182,15 @@ rot_dir = 0;
 rot_state[2] = (false,false);
 menu_count = 0;
 };
-
-~UserInput()
+//   The idea was to destroy the class object and instatiate a new one with new parameters during the reset... => not possible for now.
+~UserInput()  // Destructor: was meant to free the dynamic arrays. Since the Arduino does not allow to exit the main loop during the execution and subsequently initialice new instances, this destructor is never used. => maybe a solution can be found later...
 {
 delete[] pin_state;
 };
 
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// A class, which methods are used to copy and store profiles
 class Copy
 {
   private:
@@ -202,13 +204,6 @@ static void CopyToEEPROM(Profile & profile); // Copies the Profile Stored in EEP
 static bool LoadFromEEPROM(Profile & profile); // Loads the referenced profile to the EEPROM.
 
 };
-
- 
-
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif
