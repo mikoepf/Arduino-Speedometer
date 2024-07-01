@@ -1,0 +1,19 @@
+
+NOTE: The project has to be built in release mode!!
+
+	Preparation:
+
+1.	Create a new folder e.g:"ProfileCreator_Deploy"
+2.	Copy the "ProfileCreator.exe" and "Profiles.db" form the project-release-folder into the newly 	created folder. 
+	E.g: "C:\Users\Mischa\Desktop\ProfileCreator_Deploy\ProfileCreator.exe"
+	
+	Execution:
+
+1) 	GO to the QT-bin-Directory: E.g: "C:\Qt\6.7.1\msvc2019_64\bin"
+2) 	Hold LSHIFT + RMB(Right Mouse Button) => Select in the menu: "Open PowerShell window here"
+3) 	In the PowerShell, run the ".\windeployqt.exe" whith the location of the executable (previously 	created folder with the executable "ProfileCreator_Deploy").
+	E.g:
+
+PS C:\Qt\6.7.1\msvc2019_64\bin> .\windeployqt.exe C:\Users\Mischa\Desktop\ProfileCreator_Deploy\ProfileCreator.exe
+
+NOTE: "PS C:\Qt\6.7.1\msvc2019_64\bin>" is the location of the "windeployqt.exe" / where the PowerShell was evoked
